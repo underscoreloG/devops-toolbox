@@ -1,0 +1,1746 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ops Desk</title>
+<style>
+:root{
+  --bg:#f3f4f7; --panel:#ffffff; --panel2:#eef0f4; --text:#1b1f27; --muted:#667085;
+  --line:#dde1e8; --accent:#2f6fed; --accent-fg:#ffffff; --ok:#1c8f50; --warn:#b26a00; --warnbg:#fff5e0; --danger:#d03b3b;
+  --mono:ui-monospace,"Cascadia Code",Consolas,Menlo,monospace; --radius:10px;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg:#0e1117; --panel:#161a22; --panel2:#1d222c; --text:#e6e9ef; --muted:#8a93a4;
+    --line:#2a303c; --accent:#5b8cff; --accent-fg:#0b0e14; --ok:#3ecf7a; --warn:#f0b255; --warnbg:#2a2214; --danger:#ff6b6b;
+  }
+}
+*{box-sizing:border-box}
+html{scroll-padding-top:120px}
+body{margin:0;background:var(--bg);color:var(--text);font:14px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+[hidden]{display:none !important}
+
+/* top bar */
+.top{position:sticky;top:0;z-index:5;background:var(--panel);border-bottom:1px solid var(--line)}
+.bar{display:flex;align-items:center;gap:12px;padding:10px 16px;flex-wrap:wrap}
+.brand{font-size:16px;font-weight:700;letter-spacing:.01em}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.seg button{background:transparent;color:var(--muted);border:0;border-radius:0;padding:5px 14px;font-weight:600}
+.seg button[aria-pressed=true]{background:var(--accent);color:var(--accent-fg)}
+.search{flex:1;min-width:200px;max-width:460px;margin-left:auto}
+.tabs{display:flex;flex-wrap:wrap;gap:2px 4px;padding:0 16px 8px}
+.tab{background:transparent;color:var(--muted);border:1px solid transparent;border-radius:7px;padding:3px 10px;font-weight:600;cursor:pointer}
+.tab:hover{color:var(--text)}
+.tab[aria-selected=true]{background:var(--panel2);color:var(--text);border-color:var(--line)}
+
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+.btn{background:var(--accent);color:var(--accent-fg);border:0;border-radius:7px;padding:6px 12px;font-weight:600}
+.btn:hover{filter:brightness(1.08)}
+.btn.ghost{background:transparent;color:var(--muted);border:1px solid var(--line);font-weight:500}
+.btn.ghost:hover{color:var(--text);border-color:var(--muted);filter:none}
+.tiny{padding:2px 8px;font-size:12px}
+:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+input[type=text],input[type=search],input[type=number],input[type=datetime-local],select,textarea{
+  background:var(--panel2);border:1px solid var(--line);border-radius:7px;padding:6px 9px;width:100%;
+}
+textarea{resize:vertical;font-family:var(--mono);font-size:12.5px;min-height:90px}
+.muted{color:var(--muted)} .small{font-size:12px}
+
+main{padding:14px 16px 40px;max-width:1700px;margin:0 auto}
+
+/* cheatsheet */
+.thead{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;margin:0 0 10px}
+.thead h1{margin:0;font-size:20px}
+.ver{color:var(--muted);font-size:12.5px;font-family:var(--mono)}
+.notes{display:flex;flex-direction:column;gap:6px;margin-bottom:12px}
+.note{background:var(--warnbg);color:var(--text);border-left:3px solid var(--warn);padding:7px 10px;border-radius:6px;font-size:13px}
+.cards{columns:370px;column-gap:12px}
+.csec{break-inside:avoid;background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:10px 12px;margin:0 0 12px}
+.csec h3{margin:0 0 8px;font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+.rw{margin-bottom:8px}
+.rw:last-child{margin-bottom:0}
+.cmd{
+  display:block;width:100%;text-align:left;background:var(--panel2);border:1px solid var(--line);border-radius:6px;
+  padding:4px 8px;font:12.5px/1.4 var(--mono);white-space:pre-wrap;word-break:break-word;color:var(--text);
+}
+.cmd:hover{border-color:var(--accent)}
+.rw .d{color:var(--muted);font-size:12.5px;padding:2px 2px 0}
+.rw.txt .t{font-weight:600}
+.rw.txt .d{padding-top:0}
+.sr-tool{column-span:all;margin:6px 0 10px;font-size:13px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.06em}
+.empty{color:var(--muted);padding:30px 0;text-align:center}
+
+/* toolbox */
+.tbox{max-width:900px;margin:0 auto}
+.panel{display:none;flex-direction:column;gap:10px;background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:14px}
+.panel.on{display:flex}
+.panel h2{margin:0;font-size:16px}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.row>input[type=text],.row>select{flex:1;min-width:140px;width:auto}
+.kv{display:grid;grid-template-columns:auto 1fr auto;gap:4px 10px;align-items:center}
+.kv .k{color:var(--muted);font-size:12px}
+.kv .v{font-family:var(--mono);font-size:12.5px;word-break:break-all}
+.status{font-size:12px;min-height:1.4em}
+.status.err{color:var(--danger)} .status.ok{color:var(--ok)}
+label.chk{display:flex;gap:6px;align-items:center;color:var(--muted);font-size:12px}
+table{border-collapse:collapse;width:100%}
+td,th{padding:3px 8px 3px 0;text-align:left;border-bottom:1px solid var(--line);font-size:12.5px;vertical-align:top}
+th{color:var(--muted);font-weight:600;font-size:12px}
+td.m{font-family:var(--mono);word-break:break-all}
+.grid3{display:grid;grid-template-columns:auto repeat(3,auto);gap:6px 18px;justify-content:start;align-items:center}
+.hl{font-family:var(--mono);font-size:12.5px;white-space:pre-wrap;word-break:break-word;background:var(--panel2);border:1px solid var(--line);border-radius:7px;padding:8px;min-height:60px}
+mark{background:var(--accent);color:var(--accent-fg);border-radius:3px;padding:0 1px}
+.bigout{font:600 20px var(--mono);word-break:break-all}
+
+#toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%) translateY(20px);background:var(--text);color:var(--bg);
+  padding:7px 14px;border-radius:8px;font-weight:600;opacity:0;pointer-events:none;transition:.18s;z-index:10}
+#toast.on{opacity:1;transform:translateX(-50%)}
+footer{color:var(--muted);font-size:12px;text-align:center;padding:10px 16px 24px}
+</style>
+</head>
+<body>
+<div class="top">
+  <div class="bar">
+    <span class="brand">Ops Desk</span>
+    <div class="seg" role="group" aria-label="Mode">
+      <button id="modeCs" aria-pressed="true">Cheatsheets</button>
+      <button id="modeTb" aria-pressed="false">Toolbox</button>
+    </div>
+    <input type="search" class="search" id="q" placeholder="Search all cheatsheets  ( / to focus, Esc to clear )" aria-label="Search cheatsheets">
+  </div>
+  <div class="tabs" id="csTabs" role="tablist" aria-label="Cheatsheets"></div>
+  <div class="tabs" id="tbTabs" role="tablist" aria-label="Toolbox" hidden></div>
+</div>
+
+<main>
+  <section id="csView">
+    <div id="csHead"></div>
+    <div id="csBody"></div>
+  </section>
+
+  <section id="tbView" class="tbox" hidden>
+
+    <div class="panel" data-tab="epoch" data-label="Epoch">
+      <h2>Epoch converter</h2>
+      <div class="row"><input type="text" id="epIn" placeholder="Unix timestamp (s/ms/us/ns) or date string" aria-label="Timestamp"><button class="btn ghost" id="epNow">Now</button></div>
+      <div class="status" id="epStatus"></div>
+      <div class="kv" id="epOut"></div>
+      <div class="muted small">Date to epoch (interpreted in your local time zone)</div>
+      <input type="datetime-local" step="1" id="epDate" aria-label="Date to convert">
+      <div class="kv" id="epOut2"></div>
+    </div>
+
+    <div class="panel" data-tab="json" data-label="JSON">
+      <h2>JSON formatter</h2>
+      <textarea id="jsIn" style="min-height:260px" placeholder="Paste JSON" aria-label="JSON"></textarea>
+      <div class="row">
+        <button class="btn" id="jsFmt">Format</button><button class="btn ghost" id="jsMin">Minify</button>
+        <button class="btn ghost" id="jsSort">Sort keys</button><button class="btn ghost" id="jsCopy">Copy</button>
+      </div>
+      <div class="status" id="jsStatus"></div>
+    </div>
+
+    <div class="panel" data-tab="b64" data-label="Base64">
+      <h2>Base64</h2>
+      <textarea id="bIn" placeholder="Input (text or base64)" aria-label="Base64 input"></textarea>
+      <div class="row">
+        <button class="btn" id="bEnc">Encode</button><button class="btn ghost" id="bDec">Decode</button>
+        <label class="chk"><input type="checkbox" id="bUrl"> URL-safe</label>
+      </div>
+      <textarea id="bOut" readonly placeholder="Output" aria-label="Base64 output"></textarea>
+      <div class="row"><button class="btn ghost" id="bCopy">Copy output</button><div class="status" id="bStatus"></div></div>
+    </div>
+
+    <div class="panel" data-tab="url" data-label="URL">
+      <h2>URL encode / decode / parse</h2>
+      <textarea id="uIn" placeholder="Text or URL" aria-label="URL input"></textarea>
+      <div class="row">
+        <button class="btn" id="uEnc">Encode component</button><button class="btn ghost" id="uEncU">Encode full URL</button>
+        <button class="btn ghost" id="uDec">Decode</button><button class="btn ghost" id="uCopy2">Copy output</button>
+      </div>
+      <textarea id="uOut2" readonly placeholder="Output" aria-label="URL output"></textarea>
+      <div class="muted small">Parsed (if the input is a full URL)</div>
+      <table id="uParts"></table>
+    </div>
+
+    <div class="panel" data-tab="hash" data-label="Hash">
+      <h2>Hash (SHA-1 / 256 / 384 / 512)</h2>
+      <textarea id="hIn" placeholder="Text to hash (UTF-8)" aria-label="Text to hash"></textarea>
+      <div class="muted small">Or pick a file to checksum (stays in your browser)</div>
+      <input type="file" id="hFile" aria-label="File to hash">
+      <div class="status" id="hStatus"></div>
+      <div class="kv" id="hOut"></div>
+      <div class="muted small">Compare against a published checksum:</div>
+      <div class="row"><input type="text" id="hCmp" placeholder="Paste expected hash" aria-label="Expected hash"><span class="status" id="hCmpS"></span></div>
+    </div>
+
+    <div class="panel" data-tab="jwt" data-label="JWT">
+      <h2>JWT decoder</h2>
+      <textarea id="jwIn" placeholder="Paste a JWT (eyJ...)" aria-label="JWT"></textarea>
+      <div class="status" id="jwStatus"></div>
+      <div class="kv" id="jwClaims"></div>
+      <div class="muted small">Header</div><textarea id="jwH" readonly style="min-height:70px" aria-label="JWT header"></textarea>
+      <div class="muted small">Payload</div><textarea id="jwP" readonly style="min-height:140px" aria-label="JWT payload"></textarea>
+      <div class="muted small">Decoding only: the signature is NOT verified. Decoding runs locally in this page.</div>
+    </div>
+
+    <div class="panel" data-tab="uuid" data-label="UUID">
+      <h2>UUID v4 generator</h2>
+      <div class="row">
+        <input type="number" id="uuCount" value="5" min="1" max="100" style="width:90px;flex:none" aria-label="Count">
+        <button class="btn" id="uuGen">Generate</button><button class="btn ghost" id="uuCopy">Copy all</button>
+        <label class="chk"><input type="checkbox" id="uuUpper"> Uppercase</label>
+      </div>
+      <textarea id="uuOut" readonly style="min-height:160px" aria-label="UUIDs"></textarea>
+    </div>
+
+    <div class="panel" data-tab="secret" data-label="Secrets">
+      <h2>Random secret generator</h2>
+      <div class="row">
+        <select id="sCharset" aria-label="Character set" style="flex:2">
+          <option value="hex">Hex (0-9 a-f)</option>
+          <option value="alnum" selected>Letters + digits</option>
+          <option value="sym">Letters + digits + symbols</option>
+          <option value="b64u">URL-safe (A-Z a-z 0-9 - _)</option>
+        </select>
+        <input type="number" id="sLen" value="32" min="4" max="256" style="width:90px;flex:none" aria-label="Length">
+        <input type="number" id="sCount" value="3" min="1" max="20" style="width:80px;flex:none" aria-label="Count">
+        <button class="btn" id="sGen">Generate</button><button class="btn ghost" id="sCopy">Copy all</button>
+      </div>
+      <textarea id="sOut" readonly style="min-height:120px" aria-label="Secrets"></textarea>
+      <div class="status" id="sInfo"></div>
+      <div class="muted small">Uses crypto.getRandomValues with rejection sampling (no modulo bias). Generated locally, never sent anywhere.</div>
+    </div>
+
+    <div class="panel" data-tab="cron" data-label="Cron">
+      <h2>Cron checker</h2>
+      <input type="text" id="crIn" value="*/15 9-17 * * 1-5" style="font-family:var(--mono)" aria-label="Cron expression">
+      <div class="muted small">5 fields: minute hour day-of-month month day-of-week. Supports * , - / names, @daily etc.</div>
+      <div class="status" id="crStatus"></div>
+      <table id="crFields"></table>
+      <div class="muted small">Next runs (your local time, UTC in brackets)</div>
+      <table id="crNext"></table>
+    </div>
+
+    <div class="panel" data-tab="tz" data-label="Time zones">
+      <h2>Time zone converter</h2>
+      <div class="row"><input type="datetime-local" id="tzIn" aria-label="Date and time" style="flex:1"><select id="tzSrc" aria-label="Source zone"></select></div>
+      <table id="tzOut"></table>
+    </div>
+
+    <div class="panel" data-tab="chmod" data-label="chmod">
+      <h2>chmod calculator</h2>
+      <div class="grid3" id="chGrid"></div>
+      <div class="row">
+        <input type="text" id="chOct" value="755" maxlength="4" style="max-width:110px;flex:none;font-family:var(--mono)" aria-label="Octal mode">
+        <span class="muted small">octal (3 or 4 digits)</span>
+      </div>
+      <div class="kv" id="chOut"></div>
+    </div>
+
+    <div class="panel" data-tab="cidr" data-label="CIDR">
+      <h2>IPv4 subnet calculator</h2>
+      <input type="text" id="cdIn" value="10.20.30.0/22" style="font-family:var(--mono)" aria-label="CIDR">
+      <div class="status" id="cdStatus"></div>
+      <div class="kv" id="cdOut"></div>
+      <div class="row"><span class="muted small">Split into /</span>
+        <input type="number" id="cdSplit" min="1" max="32" placeholder="e.g. 24" style="width:90px;flex:none" aria-label="Split prefix">
+        <span class="muted small">Is this IP inside?</span>
+        <input type="text" id="cdIp" placeholder="10.20.31.5" style="max-width:160px" aria-label="IP to test"><span class="status" id="cdIpS"></span></div>
+      <table id="cdSubs"></table>
+    </div>
+
+    <div class="panel" data-tab="sla" data-label="SLA">
+      <h2>Availability and allowed downtime</h2>
+      <div class="row"><input type="number" id="slaIn" value="99.9" step="any" min="0" max="100" style="width:120px;flex:none" aria-label="Availability percent"><span class="muted">% availability</span></div>
+      <table id="slaOut"></table>
+      <div class="muted small">Reverse: measured downtime</div>
+      <div class="row">
+        <input type="number" id="slaMin" value="43" step="any" min="0" style="width:110px;flex:none" aria-label="Downtime minutes"><span class="muted">minutes over</span>
+        <select id="slaPer" style="max-width:160px;flex:none" aria-label="Period"><option value="86400">1 day</option><option value="604800">1 week</option><option value="2592000" selected>30 days</option><option value="31536000">365 days</option></select>
+        <span class="bigout" id="slaRev"></span>
+      </div>
+      <div class="muted small">Reference</div>
+      <table id="slaRef"></table>
+    </div>
+
+    <div class="panel" data-tab="regex" data-label="Regex">
+      <h2>Regex tester (JavaScript flavor)</h2>
+      <div class="row"><input type="text" id="rxP" value="(\d{4})-(\d{2})-(\d{2})" style="font-family:var(--mono)" aria-label="Pattern"><input type="text" id="rxF" value="g" style="max-width:80px;flex:none;font-family:var(--mono)" aria-label="Flags"></div>
+      <textarea id="rxT" aria-label="Test text">Deploy 2026-10-02 ok, rollback 2026-09-30 failed</textarea>
+      <div class="status" id="rxS"></div>
+      <div class="hl" id="rxH"></div>
+      <table id="rxM"></table>
+      <div class="muted small">JS regex differs from PCRE / RE2 / POSIX in places (lookbehind and named groups work; possessive quantifiers and atomic groups do not).</div>
+    </div>
+
+    <div class="panel" data-tab="lines" data-label="Lines">
+      <h2>Line tools</h2>
+      <textarea id="lnIn" style="min-height:240px" placeholder="One item per line" aria-label="Lines"></textarea>
+      <div class="row">
+        <button class="btn" id="lnSort">Sort</button><button class="btn ghost" id="lnNum">Sort numeric</button>
+        <button class="btn ghost" id="lnUniq">Unique (keep order)</button><button class="btn ghost" id="lnRev">Reverse</button>
+        <button class="btn ghost" id="lnTrim">Trim + drop empty</button><button class="btn ghost" id="lnCopy">Copy</button>
+      </div>
+      <div class="status" id="lnStat"></div>
+    </div>
+
+  </section>
+</main>
+<footer>Versions checked 2026-10-02 against the official GitHub release feeds. Tool behavior changes: when in doubt, run <code>--help</code>.</footer>
+<div id="toast" role="status" aria-live="polite"></div>
+
+<!-- ===================== CHEATSHEET DATA ===================== -->
+<!-- Line format: "@ver text", "! note", "# Section", "cmd ## description", "~ label ## description" (non-copyable row) -->
+
+<script type="text/plain" id="cs-git" data-name="Git">
+@ver Latest at check: 2.56.0
+! If a secret was committed, rotate it first. Rewriting history does not un-leak it.
+# Setup
+git config --global user.name "Your Name" ## set identity
+git config --global user.email you@example.com ## set email
+git config --global init.defaultBranch main ## default branch for new repos
+git config --global pull.rebase true ## rebase instead of merge on pull
+git config --global rerere.enabled true ## remember conflict resolutions
+git config --global alias.st "status -sb" ## create an alias
+git config --list --show-origin ## every setting and the file it comes from
+# Daily
+git status -sb ## short status with branch
+git add -p ## stage hunk by hunk
+git commit -m "msg" ## commit staged changes
+git commit --amend --no-edit ## fold staged changes into the last commit
+git diff --staged ## what will be committed
+git diff main...HEAD --stat ## what this branch changed vs main
+git log --oneline --graph --decorate --all ## compact history graph
+git log -p -S"text" -- path ## commits that added or removed a string
+git log --diff-filter=D --summary ## find deleted files
+git blame -L 10,30 file ## who changed lines 10-30
+git show <commit>:path/to/file ## file as of a commit
+git grep -n "text" ## search tracked files
+git shortlog -sn --no-merges ## commits per author
+# Branches and remotes
+git switch -c feature ## create and switch
+git switch - ## back to the previous branch
+git branch -vv ## local branches with upstream and ahead/behind
+git branch --merged main ## branches already merged (safe to delete)
+git branch -d name ## delete merged branch (-D to force)
+git push -u origin HEAD ## push current branch, set upstream
+git push origin --delete name ## delete remote branch
+git fetch --prune ## drop refs to branches deleted on the remote
+git remote -v ## list remotes
+git remote set-url origin <url> ## change a remote URL
+# Undo
+git restore file ## discard working-tree changes to a file
+git restore --staged file ## unstage a file
+git restore -s <commit> file ## restore a file from a commit
+git reset --soft HEAD~1 ## undo last commit, keep changes staged
+git reset HEAD~1 ## undo last commit, keep changes unstaged
+git reset --hard <commit> ## DANGER: discard everything, move the branch
+git revert <commit> ## new commit that undoes one (safe on shared branches)
+git reflog ## where HEAD has been; rescue "lost" commits
+git clean -fdn ## preview untracked files that would be removed (-fd to delete)
+# Rebase, merge, cherry-pick
+git rebase -i HEAD~5 ## squash, reword, reorder the last 5 commits
+git rebase --update-refs main ## rebase a stack and move the dependent branch refs too
+git commit --fixup <commit> ## mark a commit as a fix for an earlier one
+git rebase -i --autosquash main ## apply fixups automatically
+git rebase --abort ## give up a rebase (also --continue)
+git merge --no-ff feature ## always create a merge commit
+git merge --abort ## cancel a conflicted merge
+git cherry-pick -x <commit> ## copy a commit, record its origin
+git push --force-with-lease ## safer force push: fails if remote moved
+git merge-base main feature ## common ancestor
+git range-diff main old new ## compare two versions of a rebased series
+# Stash
+git stash push -u -m "wip" ## stash including untracked files
+git stash list ## list stashes
+git stash pop ## apply the latest stash and drop it
+git stash apply stash@{1} ## apply a specific stash, keep it
+git stash show -p ## show the latest stash as a patch
+# Tags
+git tag -a v1.2.0 -m "msg" ## annotated tag
+git push --tags ## push tags
+git describe --tags ## nearest tag description
+# Advanced
+git worktree add ../hotfix hotfix-branch ## second working dir on another branch
+git worktree list ## list worktrees
+git worktree remove ../hotfix ## remove a worktree
+git bisect start ## start a binary search for a bad commit
+git bisect bad ## mark current commit bad (then: git bisect good <commit>)
+git bisect run ./test.sh ## automate the search
+git bisect reset ## end bisect
+git clone --filter=blob:none --sparse <url> ## partial clone, then use sparse-checkout
+git sparse-checkout set dir1 dir2 ## only materialize these directories
+git submodule update --init --recursive ## fetch submodules
+git maintenance start ## schedule background repo maintenance
+git filter-repo --path secret.txt --invert-paths ## remove a file from all history (separate tool)
+</script>
+
+<script type="text/plain" id="cs-docker" data-name="Docker">
+@ver Latest at check: Engine 29.8.2, Compose 5.6.0, Buildx 0.37.2
+! Current CLI is "docker compose" (space). The old docker-compose v1 binary is end of life. Compose v5 delegates builds to Bake.
+# Images and build
+docker build -t name:tag . ## build from ./Dockerfile
+docker buildx build --platform linux/amd64,linux/arm64 -t name:tag --push . ## multi-arch build and push
+docker buildx bake ## build every target in docker-bake.hcl / compose file
+docker init ## generate Dockerfile, compose.yaml and .dockerignore for a project
+docker images ## list local images
+docker pull name:tag ## pull an image
+docker tag src:tag registry/dst:tag ## add a tag
+docker push registry/dst:tag ## push
+docker history name:tag ## layers and sizes
+docker scout cves name:tag ## vulnerability scan (Docker Scout)
+docker save -o img.tar name:tag ## export an image to a tarball
+docker load -i img.tar ## import it
+docker image prune -a ## remove all unused images
+# Run
+docker run -d --name web -p 8080:80 nginx ## detached, publish port 8080 -> 80
+docker run --rm -it alpine sh ## throwaway interactive shell
+docker run -v "$(pwd)":/data -w /data alpine ls ## bind-mount current dir (PowerShell: ${PWD})
+docker run --env-file .env -e KEY=val img ## environment variables
+docker run --restart unless-stopped img ## restart policy
+docker run --memory 512m --cpus 1.5 img ## resource limits
+docker run --read-only --cap-drop ALL --security-opt no-new-privileges img ## hardened run
+docker run --network host img ## share the host network stack (Linux)
+# Containers
+docker ps -a ## all containers, including stopped
+docker logs -f --tail 100 --since 10m name ## follow logs
+docker exec -it name sh ## shell into a running container
+docker cp name:/path ./local ## copy out (reverse order to copy in)
+docker stop name ## graceful stop (also start, restart)
+docker rm -f name ## force remove
+docker stats --no-stream ## CPU/mem snapshot
+docker top name ## processes in a container
+docker port name ## published ports
+docker diff name ## files changed in the container filesystem
+docker inspect -f '{{.State.Health.Status}}' name ## health check status
+docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' name ## container IP
+docker update --restart=no name ## change restart policy live
+docker events --since 10m ## daemon event stream
+# Compose
+docker compose up -d --build ## build and start in the background
+docker compose up -d --wait ## wait until services are healthy
+docker compose down ## stop and remove containers and networks
+docker compose down -v ## DANGER: also removes named volumes
+docker compose ps ## service status
+docker compose logs -f svc ## follow a service
+docker compose exec svc sh ## shell into a service
+docker compose run --rm svc cmd ## one-off command in a new container
+docker compose config ## render and validate the final config
+docker compose pull ## pull images
+docker compose up -d --force-recreate --no-deps svc ## recreate one service only
+docker compose restart svc ## restart a service
+docker compose watch ## sync or rebuild on file changes (needs develop.watch)
+docker compose --profile debug up ## enable a profile
+docker compose -f a.yml -f b.yml up ## merge multiple compose files
+docker compose build --no-cache ## rebuild without cache
+# Volumes, networks, context
+docker volume ls ## list volumes
+docker volume inspect vol ## where a volume lives
+docker network ls ## list networks
+docker network create appnet ## create a user-defined bridge network
+docker network inspect appnet ## attached containers and subnet
+docker context ls ## list Docker contexts (remote engines)
+docker context use name ## switch engine
+docker login registry.example.com ## registry login
+# Cleanup and disk
+docker system df ## what uses space
+docker system prune ## stopped containers, unused networks, dangling images
+docker system prune -a --volumes ## DANGER: also all unused images and volumes
+docker builder prune ## clear the build cache
+# Dockerfile patterns
+~ Multi-stage ## FROM golang AS build ... then FROM gcr.io/distroless/static and COPY --from=build /out/app /app
+RUN --mount=type=cache,target=/root/.cache pip install -r requirements.txt ## BuildKit cache mount
+RUN --mount=type=secret,id=tok cat /run/secrets/tok ## build secret that never lands in a layer
+HEALTHCHECK --interval=30s --timeout=3s CMD curl -f http://localhost:8080/health || exit 1 ## health check
+USER 10001 ## run as non-root
+~ CMD vs ENTRYPOINT ## ENTRYPOINT is the executable, CMD is the default arguments. Use exec form ["a","b"].
+~ .dockerignore ## exclude .git, node_modules, .env: smaller context, fewer leaked secrets
+# Debug
+docker run --rm -it --net container:name nicolaka/netshoot ## network tools inside a container's network namespace
+docker logs name 2>&1 | grep -i error ## logs go to stderr too
+~ Exit code 137 ## usually killed: OOM or docker kill (128 + 9)
+~ Exit code 143 ## SIGTERM (128 + 15)
+</script>
+
+<script type="text/plain" id="cs-k8s" data-name="Kubernetes">
+@ver Latest at check: Kubernetes 1.37.1, kustomize 5.8.2
+! kubectl is supported within one minor version of the API server (older or newer).
+! Ingress NGINX was retired in March 2026 (no more releases or security fixes). Plan a move to Gateway API or another controller.
+# Context and cluster
+kubectl config get-contexts ## list contexts
+kubectl config use-context <name> ## switch cluster
+kubectl config set-context --current --namespace=<ns> ## default namespace for this context
+kubectl config view --minify ## active context's config
+kubectl cluster-info ## API server and core services
+kubectl version ## client and server versions
+kubectl api-resources ## every resource type, short names
+kubectl explain pod.spec.containers --recursive ## field documentation
+kubectl get --raw '/readyz?verbose' ## API server readiness checks
+kubectl auth can-i create deployments -n <ns> ## test your own permission
+kubectl auth can-i --list --as system:serviceaccount:<ns>:<sa> ## what a service account can do
+# Inspect
+kubectl get pods -A -o wide ## all namespaces, with node and IP
+kubectl get pods -l app=web ## by label
+kubectl get pods -A --field-selector=status.phase!=Running ## not running
+kubectl get pods --field-selector spec.nodeName=<node> -A ## everything on one node
+kubectl get all -n <ns> ## common workload kinds in a namespace
+kubectl get events --sort-by=.lastTimestamp -n <ns> ## recent events, newest last
+kubectl events --for pod/<pod> ## events for one object
+kubectl describe pod <pod> ## state, conditions, events
+kubectl get pod <pod> -o yaml ## full object
+kubectl get pod <pod> -o jsonpath='{.status.podIP}' ## one field
+kubectl get pods -o custom-columns=NAME:.metadata.name,NODE:.spec.nodeName ## custom table
+kubectl get pods --sort-by='.status.containerStatuses[0].restartCount' ## sort by restarts
+kubectl get pods -w ## watch changes
+kubectl top pods --containers -n <ns> ## CPU/mem (needs metrics-server)
+kubectl top nodes ## node usage
+kubectl wait --for=condition=Ready pod -l app=web --timeout=120s ## block until ready
+# Logs, exec, debug
+kubectl logs -f <pod> -c <container> --tail=100 ## follow logs
+kubectl logs <pod> --previous ## logs of the crashed container
+kubectl logs -l app=web --all-containers --prefix ## all pods of an app
+kubectl exec -it <pod> -- sh ## shell in a pod
+kubectl cp <ns>/<pod>:/path ./local ## copy out of a pod
+kubectl port-forward svc/web 8080:80 ## local 8080 -> service port 80
+kubectl debug -it <pod> --image=busybox --target=<container> ## ephemeral debug container
+kubectl debug node/<node> -it --image=ubuntu ## privileged pod on a node
+kubectl run tmp --rm -it --image=nicolaka/netshoot -- bash ## throwaway network debug pod
+# Apply and change
+kubectl apply -f file.yaml ## create or update from a manifest
+kubectl apply -k dir/ ## apply a kustomize directory
+kubectl apply --server-side -f file.yaml ## server-side apply
+kubectl diff -f file.yaml ## preview changes
+kubectl delete -f file.yaml ## delete what the manifest defines
+kubectl create deploy web --image=nginx --dry-run=client -o yaml ## generate a manifest
+kubectl edit deploy <name> ## edit live in $EDITOR
+kubectl patch deploy <name> -p '{"spec":{"replicas":3}}' ## quick patch
+kubectl set image deploy/<name> <container>=<image:tag> ## change an image
+kubectl set env deploy/<name> KEY=value ## change an env var
+kubectl scale deploy <name> --replicas=3 ## scale
+kubectl label pod <pod> key=value ## add a label
+kubectl delete pod <pod> --grace-period=0 --force ## last resort for stuck pods
+kubectl create job manual-1 --from=cronjob/<name> ## run a cronjob now
+# Rollouts
+kubectl rollout status deploy/<name> --timeout=5m ## wait for a rollout
+kubectl rollout history deploy/<name> ## revisions
+kubectl rollout undo deploy/<name> ## roll back (--to-revision=N)
+kubectl rollout restart deploy/<name> ## rolling restart
+kubectl rollout pause deploy/<name> ## pause (resume to continue)
+# Nodes
+kubectl cordon <node> ## stop scheduling on a node
+kubectl drain <node> --ignore-daemonsets --delete-emptydir-data ## evict pods
+kubectl uncordon <node> ## allow scheduling again
+kubectl taint nodes <node> key=value:NoSchedule ## add a taint (key- removes it)
+kubectl describe node <node> ## capacity, allocated resources, conditions
+# Secrets and tokens
+kubectl create secret generic <name> --from-literal=key=value ## create a secret
+kubectl get secret <name> -o jsonpath='{.data.key}' ## value is base64
+kubectl create token <serviceaccount> -n <ns> ## short-lived service account token
+kubectl create configmap <name> --from-file=config.yaml ## configmap from a file
+# Gateway API and kustomize
+kubectl get gateways,httproutes -A ## Gateway API objects
+kubectl kustomize dir/ ## render kustomize output
+# Troubleshooting map
+~ Pending ## describe pod, read Events: insufficient resources, taints, unbound PVC
+~ CrashLoopBackOff ## logs --previous, describe for exit code (137 = OOMKilled)
+~ ImagePullBackOff ## wrong image or tag, missing imagePullSecrets, registry unreachable
+~ Service has no endpoints ## kubectl get endpointslices -l kubernetes.io/service-name=<svc>; selector must match pod labels
+~ Pod Running but not Ready ## readiness probe failing: describe pod, check probe path and port
+~ Evicted ## node pressure (disk or memory): describe node, check requests and limits
+# Shell setup
+alias k=kubectl ## short alias
+source <(kubectl completion bash) ## bash completion
+kubectl completion powershell | Out-String | Invoke-Expression ## PowerShell completion
+</script>
+
+<script type="text/plain" id="cs-helm" data-name="Helm">
+@ver Latest at check: Helm 4.3.0
+! Helm 4 renamed flags: --atomic is now --rollback-on-failure, --force is now --force-replace. Old names still work with a deprecation warning.
+! --wait takes a strategy: watcher (default when used alone), hookOnly, legacy. The watcher strategy needs the watch verb in RBAC.
+! Post-renderers are plugins in Helm 4: you pass a plugin name, not an executable path.
+# Repos and charts
+helm repo add <name> <url> ## add a chart repo
+helm repo update ## refresh the index
+helm search repo <keyword> --versions ## find chart versions
+helm search hub <keyword> ## search Artifact Hub
+helm show values <chart> > values.yaml ## default values to edit
+helm show chart <chart> ## chart metadata
+helm pull <chart> --untar ## download and unpack a chart
+# Install and upgrade
+helm install <rel> <chart> -n <ns> --create-namespace -f values.yaml ## install
+helm upgrade --install <rel> <chart> -n <ns> -f values.yaml --rollback-on-failure --timeout 5m ## idempotent deploy with auto-rollback
+helm upgrade --install <rel> <chart> --wait ## wait for readiness (watcher strategy)
+helm upgrade <rel> <chart> --reset-then-reuse-values -f new.yaml ## chart defaults + last values + overrides
+helm upgrade <rel> <chart> --take-ownership ## adopt resources that exist without Helm annotations
+helm upgrade <rel> <chart> --server-side=auto ## server-side apply (auto is the default)
+helm install <rel> <chart> --set key=value --set-string key=123 ## inline values (--set-json, --set-file also exist)
+helm install <rel> <chart> --dry-run=server ## render and validate against the cluster API
+# Inspect
+helm list -A ## releases in all namespaces
+helm status <rel> -n <ns> ## status and notes
+helm get values <rel> -n <ns> ## user-supplied values (-a for all)
+helm get manifest <rel> -n <ns> ## rendered manifests as deployed
+helm history <rel> -n <ns> ## revisions
+# Rollback and remove
+helm rollback <rel> <revision> -n <ns> ## roll back
+helm uninstall <rel> -n <ns> ## remove (--keep-history to retain records)
+# Develop and test
+helm create mychart ## scaffold a chart
+helm template <rel> ./chart -f values.yaml ## render locally
+helm lint ./chart ## static checks
+helm dependency update ./chart ## fetch dependencies
+helm package ./chart ## build a .tgz
+helm test <rel> -n <ns> ## run chart tests
+# OCI registries
+helm registry login registry.example.com ## login
+helm push mychart-0.1.0.tgz oci://registry.example.com/charts ## publish
+helm install <rel> oci://registry.example.com/charts/mychart --version 0.1.0 ## install from OCI
+# Plugins
+helm plugin list ## installed plugins
+helm plugin install https://github.com/databus23/helm-diff ## adds: helm diff upgrade <rel> <chart> -f values.yaml
+</script>
+
+<script type="text/plain" id="cs-tf" data-name="Terraform / OpenTofu">
+@ver Latest at check: Terraform 1.16.5, OpenTofu 1.13.1
+! The tofu CLI is a drop-in for most terraform commands below. State encryption and the -exclude flag are OpenTofu-only features. Commit .terraform.lock.hcl.
+# Core workflow
+terraform init ## download providers and modules, configure backend
+terraform init -upgrade ## move providers within version constraints
+terraform init -migrate-state ## move state to a changed backend
+terraform fmt -recursive ## format all files
+terraform validate ## static validation
+terraform plan -out=tfplan ## save a plan
+terraform apply tfplan ## apply exactly that plan
+terraform plan -var-file=prod.tfvars ## variable file
+terraform plan -detailed-exitcode ## exit 0 = no changes, 1 = error, 2 = changes
+terraform plan -refresh-only ## detect drift without proposing changes
+terraform plan -generate-config-out=generated.tf ## draft config for import blocks
+terraform apply -replace=aws_instance.web ## force recreation of one resource
+terraform plan -target=module.x ## escape hatch only, not a routine tool
+terraform destroy ## destroy everything (plan first with: plan -destroy)
+terraform show tfplan ## human-readable plan
+terraform show -json tfplan | jq . ## machine-readable plan
+terraform output -json ## all outputs (use -raw name for one string)
+terraform console ## evaluate expressions interactively
+terraform graph | dot -Tsvg > graph.svg ## dependency graph (needs Graphviz)
+terraform providers ## provider requirements
+terraform providers lock -platform=linux_amd64 -platform=windows_amd64 ## fill the lock file for several platforms
+terraform test ## run .tftest.hcl tests
+terraform version ## versions of CLI and providers
+# State
+terraform state list ## resources in state
+terraform state show <addr> ## one resource's attributes
+terraform state mv <old> <new> ## rename or move in state
+terraform state rm <addr> ## forget a resource without destroying it
+terraform state pull > state.json ## read the remote state
+terraform force-unlock <lock-id> ## break a stuck lock (be sure nobody is applying)
+terraform import <addr> <id> ## import an existing object
+~ import block ## import { to = ADDR  id = ID } in .tf, then plan/apply (Terraform 1.5+, preferred over CLI import)
+~ moved block ## moved { from = old  to = new } records a rename so apply does not recreate it
+~ removed block ## removed { from = ADDR } with lifecycle { destroy = false } drops from state, keeps the real resource
+# Workspaces
+terraform workspace list ## list workspaces
+terraform workspace new <name> ## create and switch
+terraform workspace select <name> ## switch
+# Environment variables
+TF_LOG=DEBUG ## log level (TRACE, DEBUG, INFO, WARN, ERROR)
+TF_LOG_PATH=./tf.log ## write logs to a file
+TF_VAR_name=value ## set variable "name"
+TF_CLI_ARGS_plan="-parallelism=20" ## default args for a subcommand
+TF_IN_AUTOMATION=1 ## trim "next step" hints in CI
+TF_PLUGIN_CACHE_DIR=$HOME/.terraform.d/plugin-cache ## share provider downloads
+# HCL patterns
+~ for_each vs count ## for_each keys resources by a stable string; count by index (reordering recreates)
+~ lifecycle ## prevent_destroy, create_before_destroy, ignore_changes = [tags]
+~ precondition / postcondition ## validate assumptions inside resources and data sources
+~ variable validation ## validation { condition = ... error_message = "..." }
+~ sensitive = true ## hides values in output, but they are still in state
+~ dynamic block ## generate repeated nested blocks from a collection
+# OpenTofu only
+tofu plan -exclude=module.x ## plan everything except a target
+~ State encryption ## encryption { } block encrypts state and plan files (OpenTofu 1.7+)
+~ Registry ## OpenTofu uses its own registry (registry.opentofu.org), and supports OCI registries (1.10+)
+</script>
+
+<script type="text/plain" id="cs-ansible" data-name="Ansible">
+@ver Latest at check: ansible-core 2.21.4
+! Use fully qualified collection names (ansible.builtin.copy, not copy) to avoid ambiguity.
+# Ad hoc
+ansible all -m ping -i inventory.ini ## connectivity check
+ansible web -i inventory.ini -m shell -a "uptime" ## run a command
+ansible web -b -m ansible.builtin.package -a "name=nginx state=present" ## become root, install a package
+ansible all -m setup -a "filter=ansible_distribution*" ## gather facts
+ansible-inventory -i inventory.ini --graph ## inventory tree (--list for JSON)
+# Playbooks
+ansible-playbook site.yml -i inventory.ini ## run
+ansible-playbook site.yml --check --diff ## dry run, show changes
+ansible-playbook site.yml -l web ## limit to a host or group
+ansible-playbook site.yml -e "key=value" -e @vars.yml ## extra vars (CLI wins over everything)
+ansible-playbook site.yml --tags deploy --skip-tags slow ## by tag
+ansible-playbook site.yml --start-at-task "Install nginx" ## resume from a task
+ansible-playbook site.yml --step ## confirm each task
+ansible-playbook site.yml --list-tasks ## show tasks (also --list-hosts, --list-tags)
+ansible-playbook site.yml --syntax-check ## syntax only
+ansible-playbook site.yml -vvv ## verbosity (up to -vvvv for connection debug)
+ansible-playbook site.yml --ask-become-pass ## prompt for sudo password
+# Roles and collections
+ansible-galaxy collection install community.general ## install a collection
+ansible-galaxy collection install -r requirements.yml ## from a requirements file
+ansible-galaxy role init myrole ## scaffold a role
+ansible-doc -l ## list modules
+ansible-doc ansible.builtin.copy ## module docs
+ansible-lint ## lint playbooks and roles
+# Vault
+ansible-vault create secrets.yml ## new encrypted file
+ansible-vault edit secrets.yml ## edit encrypted file
+ansible-vault encrypt_string 'value' --name 'db_password' ## inline encrypted variable
+ansible-vault rekey secrets.yml ## change the password
+ansible-playbook site.yml --ask-vault-pass ## prompt for vault password (or --vault-password-file)
+# Config and debugging
+ansible-config dump --only-changed ## settings that differ from defaults
+ansible --version ## versions, config file, module paths
+ansible-pull -U <repo-url> playbook.yml ## pull mode: hosts run their own config from git
+# Playbook patterns
+~ become: true ## run tasks with privilege escalation
+~ when / loop / register ## conditionals, iteration, capture results
+~ notify + handlers ## run a handler once at the end if something changed
+~ block / rescue / always ## error handling like try/catch/finally
+~ changed_when / failed_when ## override what counts as changed or failed
+~ delegate_to / run_once ## run a task on another host, or once per play
+~ serial: 1 ## rolling update: one host at a time
+~ no_log: true ## keep secrets out of logs
+~ ansible.builtin.template ## render Jinja2 files; use validate: to check before replacing
+</script>
+
+<script type="text/plain" id="cs-linux" data-name="Linux & shell">
+@ver Distribution tools vary: check man pages on the host
+# Files and search
+ls -lah ## long list, human sizes, hidden files
+find . -name "*.log" -mtime +7 ## files older than 7 days
+find / -xdev -type f -size +500M 2>/dev/null ## big files on one filesystem
+grep -rn "text" dir/ ## recursive search with line numbers
+grep -E "a|b" file ## extended regex (also -v invert, -i ignore case, -c count, -A3 -B3 context)
+rg "pattern" ## ripgrep: faster, respects .gitignore
+du -sh * | sort -h ## sizes sorted
+df -hT ## filesystem usage and type
+stat file ## size, perms, timestamps, inode
+lsof +D dir ## who has files open in a directory
+ln -s target link ## symbolic link
+rsync -avzP --delete src/ host:dst/ ## sync, mirror deletions (trailing / matters)
+tar czf out.tgz dir/ ## create archive (tar xzf to extract, tar tf to list)
+chmod 640 file ## set permissions (chown -R user:group dir)
+# Text processing
+awk '{print $1}' file ## first column
+awk -F: '{print $1}' /etc/passwd ## custom separator
+sed -i 's/old/new/g' file ## in-place replace
+sort | uniq -c | sort -nr ## frequency count
+cut -d, -f1,3 file.csv ## pick CSV columns
+tr -d '\r' < in > out ## strip Windows line endings
+tail -F file ## follow, survives log rotation
+xargs -P4 -n1 cmd ## run in parallel, one arg each
+column -t ## align columns
+diff -u a b ## unified diff
+watch -n2 'cmd' ## repeat every 2 seconds
+less +F file ## follow mode inside less (Ctrl+C to stop)
+# Processes and resources
+ps aux --sort=-%mem | head ## top memory users
+top ## live view (htop if installed)
+kill -15 <pid> ## graceful stop (-9 is the last resort)
+pkill -f name ## kill by command line match
+pgrep -a name ## find processes
+uptime ## load averages
+free -h ## memory
+vmstat 1 ## CPU, memory, swap, IO each second
+iostat -xz 1 ## disk IO (sysstat package)
+pidstat 1 ## per-process CPU
+lscpu ## CPU layout
+lsblk ## block devices
+dmesg -T | tail ## kernel messages with readable times
+ulimit -a ## shell resource limits
+strace -f -p <pid> -e trace=network ## watch a process's network syscalls
+nohup cmd & ## survive logout
+tmux new -s work ## new session (detach Ctrl+b d, attach: tmux attach -t work)
+# Users, SSH, firewall
+id ## uid, gid, groups
+sudo -l ## what you may run with sudo
+last -n 20 ## recent logins
+usermod -aG docker <user> ## add a user to a group (re-login needed)
+ssh-keygen -t ed25519 -C "label" ## new key
+ssh-copy-id user@host ## install your public key
+ssh -J jump user@target ## via a jump host
+ssh -L 8080:localhost:80 user@host ## local port forward
+ssh -D 1080 user@host ## SOCKS proxy
+~ ~/.ssh/config ## Host name / HostName ip / User u / IdentityFile ~/.ssh/id_ed25519 / ProxyJump jump
+ufw status verbose ## Ubuntu firewall status (ufw allow 443/tcp to open)
+firewall-cmd --list-all ## RHEL-family firewall status
+nft list ruleset ## nftables rules
+getenforce ## SELinux mode
+# Shell scripting
+set -euo pipefail ## fail fast, unset vars are errors, pipe failures count
+trap 'cleanup' EXIT ## run cleanup on exit
+"${var:-default}" ## default value
+[[ -f file ]] && echo yes ## file test
+cmd > out.log 2>&1 ## stdout and stderr to a file
+cmd &> out.log ## same, bash shorthand
+${path##*/} ## basename; ${file%.*} strips the extension
+shellcheck script.sh ## lint your script
+# Packages
+apt update && apt upgrade ## Debian/Ubuntu
+dnf install <pkg> ## RHEL/Fedora (dnf history to undo)
+apk add <pkg> ## Alpine
+rpm -qa | grep <name> ## installed RPMs
+# Time
+timedatectl ## clock and time zone status
+chronyc tracking ## NTP sync quality
+date -u +%s ## epoch now
+date -d @1700000000 ## epoch to date
+</script>
+
+<script type="text/plain" id="cs-systemd" data-name="systemd">
+@ver Part of the OS: systemctl --version
+# Services
+systemctl status <unit> ## state plus recent log lines
+systemctl restart <unit> ## stop then start (reload keeps running)
+systemctl enable --now <unit> ## start now and at boot
+systemctl disable --now <unit> ## stop now and at boot
+systemctl mask <unit> ## make it impossible to start
+systemctl is-active <unit> ## scripting-friendly state
+systemctl list-units --failed ## what is broken
+systemctl list-timers ## scheduled timers
+systemctl cat <unit> ## unit file plus drop-ins
+systemctl edit <unit> ## create a drop-in override (safe way to customize)
+systemctl show -p ExecStart <unit> ## read one property
+systemctl list-dependencies <unit> ## dependency tree
+systemctl daemon-reload ## after changing unit files
+systemctl get-default ## boot target (set-default multi-user.target)
+# Logs (journalctl)
+journalctl -u <unit> -f ## follow a unit
+journalctl -u <unit> --since "1 hour ago" ## time window
+journalctl -p err -b ## errors since boot
+journalctl -b -1 ## previous boot
+journalctl -k ## kernel messages
+journalctl -o json-pretty -n 1 ## structured fields of an entry
+journalctl --disk-usage ## space used by logs
+journalctl --vacuum-time=7d ## prune old logs
+# Analysis
+systemd-analyze blame ## slowest units at boot
+systemd-analyze critical-chain ## what delayed boot
+systemd-analyze verify <file> ## lint a unit file
+systemd-analyze calendar "Mon *-*-* 03:00" ## test an OnCalendar expression
+systemd-analyze security <unit> ## hardening score
+systemd-cgtop ## resource use per cgroup
+# Other
+hostnamectl ## hostname and OS info
+loginctl list-sessions ## logged-in sessions
+resolvectl status ## DNS configuration per link
+resolvectl query <host> ## resolve through systemd-resolved
+# Unit file patterns
+~ [Service] basics ## ExecStart= / User= / WorkingDirectory= / EnvironmentFile=/etc/app.env
+~ Restart policy ## Restart=on-failure / RestartSec=5
+~ Type= ## simple (default), notify (app signals ready), oneshot (runs and exits)
+~ Hardening ## NoNewPrivileges=yes / ProtectSystem=strict / PrivateTmp=yes / ProtectHome=yes
+~ Timer ## [Timer] OnCalendar=*-*-* 03:00:00 / Persistent=true (run missed jobs after downtime)
+~ Ordering ## After=network-online.target / Wants=network-online.target
+</script>
+
+<script type="text/plain" id="cs-net" data-name="Network & HTTP">
+@ver Latest at check: curl 8.22.0
+# curl
+curl -fsSL <url> ## fail on HTTP errors, silent, follow redirects
+curl -I <url> ## headers only
+curl -v <url> ## verbose: TLS handshake, headers
+curl -X POST -H "Content-Type: application/json" -d '{"a":1}' <url> ## JSON POST
+curl -d @body.json -H "Content-Type: application/json" <url> ## body from file
+curl -H "Authorization: Bearer $TOKEN" <url> ## bearer token
+curl --resolve host:443:1.2.3.4 https://host/ ## test a specific backend IP
+curl -s -o /dev/null -w "dns:%{time_namelookup} connect:%{time_connect} tls:%{time_appconnect} ttfb:%{time_starttransfer} total:%{time_total}\n" <url> ## timing breakdown
+curl --retry 3 --max-time 10 <url> ## retries and a hard timeout
+curl -k <url> ## DANGER: skips TLS verification
+curl -s <url> | jq . ## pretty-print JSON
+# DNS
+dig +short A host ## quick lookup
+dig @1.1.1.1 host ## ask a specific resolver
+dig +trace host ## follow delegation from the root
+dig -x 8.8.8.8 ## reverse lookup
+dig MX example.com ## other record types: TXT NS CNAME
+# Sockets and routing
+ss -tulpn ## listening sockets with process
+ss -s ## socket summary
+ss -tn state established '( dport = :443 )' ## established connections to :443
+ip -br a ## interfaces and addresses
+ip r ## routing table
+ip route get 8.8.8.8 ## which route and source IP would be used
+ip neigh ## ARP/neighbor table
+ip -s link ## interface error counters
+# Connectivity
+ping -c 4 host ## reachability
+mtr -rwzc 50 host ## path loss and latency report
+traceroute -n host ## path without DNS
+nc -zv host 443 ## TCP port check
+nc -l 9000 ## listen on a port (testing)
+tcpdump -i any -nn port 53 ## capture DNS traffic
+tcpdump -i eth0 -w cap.pcap host 1.2.3.4 ## capture to a file for Wireshark
+nmap -sV -p 1-1000 host ## scan: only hosts you own or are authorized to test
+# TLS (openssl)
+openssl s_client -connect host:443 -servername host ## inspect the served certificate chain
+echo | openssl s_client -connect host:443 -servername host 2>/dev/null | openssl x509 -noout -dates -subject -issuer ## expiry, subject, issuer
+openssl x509 -in cert.pem -text -noout ## decode a certificate
+openssl req -new -newkey rsa:2048 -nodes -keyout key.pem -out req.csr ## key and CSR
+openssl verify -CAfile ca.pem cert.pem ## verify a chain
+openssl rand -hex 32 ## random secret
+# Windows equivalents
+Test-NetConnection host -Port 443 ## PowerShell port check
+Resolve-DnsName host ## PowerShell DNS lookup
+netstat -ano | findstr :8080 ## who listens on a port (then tasklist /FI "PID eq <pid>")
+# HTTP status codes
+~ 200 / 201 / 204 ## OK / Created / No Content
+~ 301 / 302 / 304 ## Moved permanently / Found (temporary) / Not modified
+~ 400 / 401 / 403 / 404 ## Bad request / Not authenticated / Not allowed / Not found
+~ 409 / 413 / 429 ## Conflict / Payload too large / Too many requests
+~ 500 ## server error in the app itself
+~ 502 ## gateway got an invalid response from the upstream (upstream crashed or wrong port)
+~ 503 ## service unavailable (overloaded, no healthy backends, maintenance)
+~ 504 ## gateway timed out waiting for the upstream
+# Common ports
+~ 22 / 53 / 80 / 443 ## SSH / DNS / HTTP / HTTPS
+~ 25 / 465 / 587 ## SMTP / SMTPS / submission
+~ 3306 / 5432 / 6379 / 27017 ## MySQL / PostgreSQL / Redis / MongoDB
+~ 6443 / 10250 / 2379-2380 ## kube-apiserver / kubelet / etcd
+~ 9090 / 9093 / 9100 / 3000 ## Prometheus / Alertmanager / node_exporter / Grafana
+~ 9092 / 5672 / 9200 ## Kafka / RabbitMQ / Elasticsearch
+~ 389 / 636 / 3389 / 5985-5986 ## LDAP / LDAPS / RDP / WinRM
+</script>
+
+<script type="text/plain" id="cs-jq" data-name="jq & yq">
+@ver Latest at check: jq 1.8.2
+! "yq" is two different tools. These examples use mikefarah/yq (v4), the common one.
+# jq basics
+jq . ## pretty-print
+jq -r '.items[].metadata.name' ## raw strings, one per line
+jq -c '.[]' ## compact, one JSON per line
+jq 'keys' ## object keys
+jq 'length' ## array or object size
+jq '.a.b // "default"' ## fallback value
+jq -e '.ok' ## exit code reflects truthiness (use in scripts)
+# Filter and shape
+jq '.[] | select(.status == "failed")' ## filter items
+jq 'map(.id)' ## project one field
+jq '[.[] | {name, id}]' ## pick fields into new objects
+jq 'sort_by(.created) | reverse' ## sort descending
+jq 'group_by(.type) | map({type: .[0].type, n: length})' ## group and count
+jq 'to_entries' ## object to key/value list (from_entries reverses)
+jq 'del(.password)' ## remove a field
+jq '.count |= . + 1' ## update in place
+jq --arg env prod '.env = $env' ## inject a shell variable safely
+jq -s 'add' a.json b.json ## slurp files into one value
+# Output formats
+jq -r '.[] | [.id, .name] | @csv' ## CSV (also @tsv, @sh, @uri, @base64)
+jq -r '.token | split(".")[1] | @base64d' ## decode a base64 piece (JWT payload, may need padding)
+jq -n 'now | todate' ## current time, ISO 8601
+jq '.ts | todate' ## epoch seconds to ISO date
+# kubectl and jq
+kubectl get pods -o json | jq -r '.items[] | select(.status.phase != "Running") | .metadata.name' ## pods not running
+kubectl get pods -o jsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}' ## same idea with built-in jsonpath
+# yq (mikefarah v4)
+yq '.spec.template.spec.containers[].image' deploy.yaml ## read values
+yq -i '.spec.replicas = 3' deploy.yaml ## edit in place
+yq -i 'del(.metadata.annotations)' deploy.yaml ## delete a key
+yq 'select(.kind == "Deployment")' multi.yaml ## filter a multi-document file
+yq -o=json deploy.yaml ## YAML to JSON
+yq -p json -o yaml data.json ## JSON to YAML
+yq eval-all 'select(fileIndex==0) * select(fileIndex==1)' a.yaml b.yaml ## deep merge two files
+</script>
+
+<script type="text/plain" id="cs-gha" data-name="GitHub Actions">
+@ver Latest at check: runner 2.337.0
+! Pin third-party actions to a full commit SHA. Set minimal permissions on GITHUB_TOKEN. Prefer OIDC to cloud over long-lived secrets.
+# gh CLI: runs and workflows
+gh run list --limit 10 ## recent runs
+gh run watch ## follow a run live
+gh run view <run-id> --log-failed ## logs of failed steps only
+gh run rerun <run-id> --failed ## rerun only failed jobs
+gh workflow list ## workflows in the repo
+gh workflow run deploy.yml -f env=staging ## trigger workflow_dispatch with inputs
+# gh CLI: PRs, issues, repo
+gh pr create --fill ## open a PR from commits
+gh pr checkout 12 ## check out a PR locally
+gh pr checks --watch ## follow CI on the current PR
+gh pr merge --squash --auto ## merge when checks pass
+gh issue create ## new issue
+gh secret set NAME ## set a repo secret (prompts for the value)
+gh variable set NAME --body value ## set a repo variable
+gh release create v1.2.0 --generate-notes ## release with auto notes
+gh api repos/{owner}/{repo}/actions/runs ## raw API call
+gh auth status ## who am I
+# Workflow syntax
+~ Triggers ## on: push / pull_request / workflow_dispatch / schedule (cron in UTC) / workflow_call
+~ Least privilege ## permissions: contents: read (add only what a job needs)
+~ Concurrency ## concurrency: group: ${{ github.workflow }}-${{ github.ref }} and cancel-in-progress: true
+~ Matrix ## strategy: matrix: { os: [ubuntu-latest, windows-latest] }, fail-fast: false
+~ Job order ## needs: [build, test]
+~ Conditions ## if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+~ Environments ## environment: production adds required reviewers and scoped secrets
+~ OIDC to cloud ## permissions: id-token: write, then use the cloud provider's official login action
+~ Reusable workflow ## uses: ./.github/workflows/build.yml (callee declares on: workflow_call)
+~ Timeout ## timeout-minutes: 15 on every job, so stuck runs do not burn minutes
+echo "version=1.2.3" >> "$GITHUB_OUTPUT" ## set a step output
+echo "NAME=value" >> "$GITHUB_ENV" ## set an env var for later steps
+echo "### Result" >> "$GITHUB_STEP_SUMMARY" ## write to the run summary page
+~ Useful contexts ## github.sha, github.ref_name, github.actor, github.event_name, runner.os, secrets.NAME, vars.NAME
+~ Third-party action ## uses: owner/action@<40-char-commit-sha>  # v1.2.3 (comment keeps it readable)
+~ Debugging ## set secret ACTIONS_STEP_DEBUG=true for verbose logs; re-run with "Enable debug logging"
+</script>
+
+<script type="text/plain" id="cs-gitops" data-name="Argo CD & Flux">
+@ver Latest at check: Argo CD 3.5.3, Flux 2.9.6
+! Argo CD 3.x changed several defaults versus 2.x (tracking method, RBAC behavior). Read the upgrade notes before moving from 2.x.
+# Argo CD
+argocd login <host> --sso ## log in with SSO
+argocd app list ## applications and sync/health status
+argocd app get <app> ## details (add --hard-refresh to bypass cache)
+argocd app diff <app> ## live vs desired state
+argocd app sync <app> ## sync now
+argocd app wait <app> --health --timeout 300 ## block until healthy
+argocd app history <app> ## deployed revisions
+argocd app rollback <app> <history-id> ## roll back (disable auto-sync first)
+argocd app set <app> --sync-policy automated --auto-prune --self-heal ## enable auto-sync
+argocd app create <app> --repo <url> --path <dir> --dest-server https://kubernetes.default.svc --dest-namespace <ns> ## create an app
+argocd app manifests <app> ## rendered manifests
+argocd app logs <app> ## pod logs through Argo CD
+argocd app terminate-op <app> ## stop a stuck operation
+argocd repo add <url> --username <u> --password <token> ## register a repo
+argocd cluster add <kube-context> ## register a cluster
+# Flux
+flux check ## verify install and prerequisites
+flux bootstrap github --owner=<org> --repository=<repo> --branch=main --path=clusters/prod --personal ## install and wire to git
+flux get all -A ## status of every Flux object
+flux get kustomizations ## kustomization status
+flux reconcile kustomization <name> --with-source ## force a sync now
+flux reconcile source git <name> ## refresh a git source
+flux logs -f ## follow Flux controller logs
+flux suspend kustomization <name> ## pause reconciliation (resume to continue)
+flux diff kustomization <name> --path ./dir ## preview local changes vs cluster
+flux tree kustomization <name> ## objects managed by a kustomization
+flux events ## recent events
+flux export source git --all ## dump definitions as YAML
+# GitOps habits
+~ Rollback ## git revert the commit; the controller converges the cluster
+~ Drift ## self-heal (Argo) or reconcile (Flux) reverts manual kubectl edits
+~ Secrets ## never plain in git: use SOPS, Sealed Secrets, or External Secrets
+</script>
+
+<script type="text/plain" id="cs-prom" data-name="Prometheus">
+@ver Latest at check: Prometheus 3.15.0, Grafana 13.2.3
+! Prometheus 3: range selectors are left-open (a sample exactly at the start of the window is excluded).
+# PromQL: health and rates
+up == 0 ## targets that are down
+count by (job) (up) ## targets per job
+rate(http_requests_total[5m]) ## per-second rate of a counter
+sum by (job) (rate(http_requests_total[5m])) ## aggregate rates
+increase(http_requests_total[1h]) ## total growth over an hour
+sum(rate(http_requests_total{status=~"5.."}[5m])) / sum(rate(http_requests_total[5m])) ## error ratio
+histogram_quantile(0.95, sum by (le) (rate(http_request_duration_seconds_bucket[5m]))) ## p95 latency
+topk(5, sum by (instance) (rate(http_requests_total[5m]))) ## top 5 talkers
+absent(up{job="myjob"}) ## fires when the series disappears
+changes(process_start_time_seconds[1h]) ## restarts in the last hour
+http_requests_total offset 1d ## same series a day ago
+# PromQL: node and containers
+100 - (avg by (instance) (rate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) ## CPU used %
+node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes ## memory available ratio
+1 - node_filesystem_avail_bytes{fstype!~"tmpfs|overlay"} / node_filesystem_size_bytes{fstype!~"tmpfs|overlay"} ## disk used ratio
+predict_linear(node_filesystem_avail_bytes[6h], 24 * 3600) < 0 ## disk full within 24h
+container_memory_working_set_bytes{container!=""} ## container memory (what the OOM killer watches)
+increase(kube_pod_container_status_restarts_total[1h]) > 3 ## crash-looping pods
+# CLI and API
+promtool check config prometheus.yml ## validate config
+promtool check rules rules.yml ## validate alert and recording rules
+promtool test rules tests.yml ## unit-test rules
+promtool query instant http://localhost:9090 'up' ## run a query
+curl -s localhost:9090/api/v1/query --data-urlencode 'query=up' ## HTTP query API
+curl -X POST localhost:9090/-/reload ## reload config (needs --web.enable-lifecycle)
+curl localhost:9090/-/ready ## readiness (also /-/healthy)
+curl -s localhost:9090/api/v1/targets ## scrape targets and errors
+amtool silence add alertname=<name> -d 2h -c "reason" ## silence an alert
+amtool alert ## active alerts
+amtool check-config alertmanager.yml ## validate Alertmanager config
+# Habits
+~ Golden signals ## latency, traffic, errors, saturation
+~ Counters ## always wrap in rate() or increase(); never graph a raw counter
+~ Alert on symptoms ## user-visible error rate and latency, not CPU
+~ Labels ## keep cardinality low: no user IDs, IPs or request paths as labels
+</script>
+
+<script type="text/plain" id="cs-cloud" data-name="AWS / Azure / GCP">
+@ver Latest at check: AWS CLI 2.37.8
+# AWS: identity and config
+aws configure sso ## set up an SSO profile
+aws sso login --profile <name> ## refresh SSO credentials
+aws sts get-caller-identity ## which account and role am I
+aws configure list ## active profile and region source
+export AWS_PROFILE=<name> ## select a profile (PowerShell: $env:AWS_PROFILE="<name>")
+# AWS: common operations
+aws s3 ls s3://<bucket>/ ## list objects
+aws s3 sync ./dir s3://<bucket>/dir --delete ## mirror a directory
+aws s3 presign s3://<bucket>/<key> --expires-in 3600 ## temporary download link
+aws ec2 describe-instances --query 'Reservations[].Instances[].[InstanceId,State.Name,PrivateIpAddress]' --output table ## instance overview
+aws ec2 describe-instances --filters Name=tag:Name,Values=web ## filter by tag
+aws ssm start-session --target <instance-id> ## shell without SSH (needs SSM agent and role)
+aws logs tail <log-group> --follow --since 1h ## live CloudWatch logs
+aws eks update-kubeconfig --name <cluster> --region <region> ## add an EKS cluster to kubeconfig
+aws ecr get-login-password --region <region> | docker login --username AWS --password-stdin <account>.dkr.ecr.<region>.amazonaws.com ## ECR login
+aws secretsmanager get-secret-value --secret-id <id> --query SecretString --output text ## read a secret
+aws ssm get-parameter --name /app/key --with-decryption --query Parameter.Value --output text ## read a parameter
+aws cloudformation describe-stack-events --stack-name <stack> ## why a stack failed
+aws cloudtrail lookup-events --max-results 20 ## recent API activity
+aws iam list-attached-role-policies --role-name <role> ## policies on a role
+aws lambda invoke --function-name <fn> out.json ## invoke a function
+aws <service> <command> --no-cli-pager ## disable the pager in scripts
+# Azure
+az login ## browser login (add --use-device-code on headless hosts)
+az account list -o table ## subscriptions
+az account set -s <subscription> ## select subscription
+az group list -o table ## resource groups
+az vm list -d -o table ## VMs with power state and IPs
+az aks get-credentials -g <rg> -n <cluster> ## add an AKS cluster to kubeconfig
+az acr login -n <registry> ## ACR login for docker
+az webapp log tail -g <rg> -n <app> ## live app logs
+az monitor activity-log list --max-events 20 ## recent control-plane activity
+az role assignment list --assignee <id> --all -o table ## RBAC for an identity
+az keyvault secret show --vault-name <vault> -n <secret> --query value -o tsv ## read a secret
+az deployment group what-if -g <rg> -f main.bicep ## preview a Bicep deployment
+az rest --method get --url <url> ## raw ARM call with your credentials
+# GCP
+gcloud auth login ## user login
+gcloud auth application-default login ## credentials for SDKs and Terraform
+gcloud config set project <project> ## select project
+gcloud config configurations list ## named configurations
+gcloud compute instances list ## VMs
+gcloud compute ssh <vm> --tunnel-through-iap ## SSH via Identity-Aware Proxy
+gcloud container clusters get-credentials <cluster> --region <region> ## add a GKE cluster to kubeconfig
+gcloud run services list ## Cloud Run services
+gcloud logging read 'severity>=ERROR' --limit 20 --freshness=1h ## recent errors
+gcloud secrets versions access latest --secret=<name> ## read a secret
+gcloud projects get-iam-policy <project> ## IAM bindings
+gcloud storage ls gs://<bucket> ## list objects (gcloud storage replaces gsutil)
+gcloud auth configure-docker <region>-docker.pkg.dev ## Artifact Registry login
+# Output shaping
+~ AWS --query ## JMESPath: --query 'Items[?State==`running`].Id' --output text
+~ Azure -o tsv ## plain values for scripts: -o tsv --query name
+~ GCP --format ## --format='value(name)' or --format=json with --filter='status=RUNNING'
+</script>
+
+<script type="text/plain" id="cs-ps" data-name="PowerShell & WSL">
+@ver Latest at check: PowerShell 7.6.6
+# Discover
+Get-Help <cmdlet> -Examples ## examples (add -Online for the web page)
+Get-Command *service* ## find commands by name
+Get-Member ## what properties a piped object has
+$PSVersionTable ## PowerShell version
+# Files and text
+Get-ChildItem -Recurse -Filter *.log | Where-Object Length -gt 100MB ## big log files
+Select-String -Path *.log -Pattern "ERROR" ## grep
+Get-Content app.log -Tail 50 -Wait ## tail -f
+Get-FileHash file.iso -Algorithm SHA256 ## checksum
+Compress-Archive -Path dir -DestinationPath out.zip ## zip (Expand-Archive to unzip)
+Get-PSDrive -PSProvider FileSystem ## free space per drive
+# Processes, services, network
+Get-Process | Sort-Object CPU -Descending | Select-Object -First 10 ## top CPU
+Get-Process -Id (Get-NetTCPConnection -LocalPort 8080).OwningProcess ## who holds a port
+Get-NetTCPConnection -State Listen ## listening ports
+Get-Service | Where-Object Status -eq Running ## running services
+Restart-Service <name> ## restart a service
+Test-NetConnection <host> -Port 443 ## TCP check
+Resolve-DnsName <host> ## DNS lookup
+Get-NetFirewallRule -Enabled True | Select-Object DisplayName,Direction,Action ## active firewall rules
+# Events and system
+Get-WinEvent -FilterHashtable @{LogName='System'; Level=2; StartTime=(Get-Date).AddHours(-1)} ## system errors, last hour
+Get-ComputerInfo | Select-Object OsName,OsVersion,CsTotalPhysicalMemory ## OS summary
+Get-ScheduledTask | Where-Object State -ne Disabled ## active scheduled tasks
+Get-CimInstance Win32_OperatingSystem | Select-Object LastBootUpTime ## last boot
+whoami /groups ## my group memberships
+# Web and data
+Invoke-RestMethod -Uri <url> -Headers @{Authorization="Bearer $token"} ## call an API, JSON becomes objects
+Invoke-WebRequest -Uri <url> -OutFile file ## download
+Get-Content data.json | ConvertFrom-Json ## parse JSON
+$obj | ConvertTo-Json -Depth 10 ## serialize (default depth truncates)
+Import-Csv in.csv | Export-Csv out.csv -NoTypeInformation ## CSV round trip
+# Scripting
+$ErrorActionPreference = 'Stop' ## make errors terminating so try/catch works
+~ try/catch ## try { ... } catch { Write-Error $_ } finally { ... }
+1..10 | ForEach-Object -Parallel { $_ * 2 } -ThrottleLimit 5 ## parallel pipeline (PowerShell 7+)
+Invoke-Command -ComputerName a,b -ScriptBlock { hostname } ## run on remote machines (WinRM)
+Measure-Command { <script block> } ## time a block
+Get-Date -Format o ## ISO 8601 timestamp
+Set-ExecutionPolicy -Scope CurrentUser RemoteSigned ## allow local scripts
+[Environment]::SetEnvironmentVariable('NAME','value','User') ## persistent user env var
+# winget and WSL
+winget search <name> ## find a package
+winget install <id> ## install
+winget upgrade --all ## update everything
+wsl -l -v ## distros, state, WSL version
+wsl -d Ubuntu ## open a specific distro
+wsl --shutdown ## stop all WSL VMs (frees memory)
+wsl --update ## update the WSL kernel
+</script>
+
+<!-- ===================== APP ===================== -->
+<script>
+"use strict";
+
+/* ---------- helpers ---------- */
+const $ = (s, r = document) => r.querySelector(s);
+const h = (tag, props = {}, ...kids) => {
+  const e = document.createElement(tag);
+  for (const [k, v] of Object.entries(props)) {
+    if (k === "class") e.className = v;
+    else if (k.startsWith("on")) e.addEventListener(k.slice(2), v);
+    else e.setAttribute(k, v);
+  }
+  for (const c of kids.flat()) if (c != null) e.append(c);
+  return e;
+};
+const mem = {};
+const store = {
+  get(k, def) { try { const v = localStorage.getItem("od." + k); return v == null ? def : JSON.parse(v); } catch { return k in mem ? mem[k] : def; } },
+  set(k, v) { mem[k] = v; try { localStorage.setItem("od." + k, JSON.stringify(v)); } catch {} }
+};
+let toastT;
+function toast(msg) {
+  const t = $("#toast"); t.textContent = msg; t.classList.add("on");
+  clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove("on"), 1300);
+}
+async function copy(text, label = "Copied") {
+  try { await navigator.clipboard.writeText(text); }
+  catch {
+    const ta = h("textarea", { style: "position:fixed;opacity:0" }); ta.value = text;
+    document.body.append(ta); ta.select();
+    let ok = false; try { ok = document.execCommand("copy"); } catch {}
+    ta.remove(); if (!ok) { toast("Copy failed"); return; }
+  }
+  toast(label);
+}
+function setStatus(el, msg, kind) { el.textContent = msg || ""; el.className = "status" + (kind ? " " + kind : ""); }
+function kvRows(box, rows) {
+  box.replaceChildren();
+  for (const [k, v] of rows) box.append(h("span", { class: "k" }, k), h("span", { class: "v" }, v),
+    h("button", { class: "btn ghost tiny", onclick: () => copy(v) }, "Copy"));
+}
+const hex = bytes => [...new Uint8Array(bytes)].map(b => b.toString(16).padStart(2, "0")).join("");
+
+/* ---------- cheatsheets ---------- */
+const split2 = s => { const i = s.indexOf(" ## "); return i < 0 ? [s, ""] : [s.slice(0, i), s.slice(i + 4)]; };
+function parseCS(el) {
+  const o = { id: el.id.slice(3), name: el.dataset.name, ver: "", notes: [], sections: [] };
+  let cur = null;
+  for (const raw of el.textContent.split("\n")) {
+    const line = raw.trimEnd(); if (!line.trim()) continue;
+    if (line.startsWith("@ver ")) o.ver = line.slice(5);
+    else if (line.startsWith("! ")) o.notes.push(line.slice(2));
+    else if (line.startsWith("# ")) { cur = { t: line.slice(2), rows: [] }; o.sections.push(cur); }
+    else if (cur && line.startsWith("~ ")) { const [a, b] = split2(line.slice(2)); cur.rows.push({ text: a, desc: b }); }
+    else if (cur) { const [a, b] = split2(line); cur.rows.push({ cmd: a, desc: b }); }
+  }
+  return o;
+}
+const SHEETS = [...document.querySelectorAll('script[id^="cs-"]')].map(parseCS);
+let curSheet = store.get("cs", SHEETS[0].id);
+if (!SHEETS.some(s => s.id === curSheet)) curSheet = SHEETS[0].id;
+let mode = store.get("mode", "cs");
+
+function rowEl(r) {
+  if (r.cmd != null) return h("div", { class: "rw" },
+    h("button", { class: "cmd", title: "Click to copy", onclick: () => copy(r.cmd) }, r.cmd),
+    r.desc ? h("div", { class: "d" }, r.desc) : null);
+  return h("div", { class: "rw txt" }, h("div", { class: "t" }, r.text), r.desc ? h("div", { class: "d" }, r.desc) : null);
+}
+function sectionEl(sec, rows) {
+  return h("div", { class: "csec" }, h("h3", {}, sec.t), rows.map(rowEl));
+}
+function renderSheet() {
+  const q = $("#q").value.trim().toLowerCase();
+  const head = $("#csHead"), body = $("#csBody");
+  head.replaceChildren(); body.replaceChildren();
+  for (const b of $("#csTabs").children) b.setAttribute("aria-selected", String(!q && b.dataset.id === curSheet));
+  if (!q) {
+    const s = SHEETS.find(x => x.id === curSheet);
+    head.append(h("div", { class: "thead" }, h("h1", {}, s.name), h("span", { class: "ver" }, s.ver)),
+      s.notes.length ? h("div", { class: "notes" }, s.notes.map(n => h("div", { class: "note" }, n))) : null);
+    body.append(h("div", { class: "cards" }, s.sections.map(sec => sectionEl(sec, sec.rows))));
+    return;
+  }
+  const terms = q.split(/\s+/);
+  const hit = (s, sec, r) => { const hay = (s.name + " " + sec.t + " " + (r.cmd || r.text) + " " + r.desc).toLowerCase(); return terms.every(t => hay.includes(t)); };
+  let total = 0; const cards = h("div", { class: "cards" });
+  for (const s of SHEETS) {
+    const secs = s.sections.map(sec => ({ sec, rows: sec.rows.filter(r => hit(s, sec, r)) })).filter(x => x.rows.length);
+    if (!secs.length) continue;
+    cards.append(h("div", { class: "sr-tool" }, s.name));
+    for (const { sec, rows } of secs) { total += rows.length; cards.append(sectionEl(sec, rows)); }
+  }
+  head.append(h("div", { class: "thead" }, h("h1", {}, "Search"), h("span", { class: "ver" }, `${total} result${total === 1 ? "" : "s"} for "${$("#q").value.trim()}"`)));
+  body.append(total ? cards : h("div", { class: "empty" }, "No match in any cheatsheet."));
+}
+const csTabs = $("#csTabs");
+for (const s of SHEETS) csTabs.append(h("button", { class: "tab", role: "tab", "data-id": s.id, onclick: () => { curSheet = s.id; store.set("cs", s.id); $("#q").value = ""; renderSheet(); window.scrollTo(0, 0); } }, s.name));
+$("#q").addEventListener("input", () => { if (mode !== "cs") setMode("cs"); renderSheet(); });
+$("#q").addEventListener("keydown", e => { if (e.key === "Escape") { e.target.value = ""; renderSheet(); e.target.blur(); } });
+document.addEventListener("keydown", e => {
+  if (e.key === "/" && !/^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement.tagName)) { e.preventDefault(); setMode("cs"); $("#q").focus(); }
+});
+
+/* ---------- toolbox tabs + mode ---------- */
+const panels = [...document.querySelectorAll(".panel")];
+const tbTabs = $("#tbTabs");
+let curTool = store.get("tb", "epoch");
+if (!panels.some(p => p.dataset.tab === curTool)) curTool = "epoch";
+function selectTool(name) {
+  curTool = name; store.set("tb", name);
+  for (const b of tbTabs.children) b.setAttribute("aria-selected", String(b.dataset.tab === name));
+  for (const p of panels) p.classList.toggle("on", p.dataset.tab === name);
+}
+for (const p of panels) tbTabs.append(h("button", { class: "tab", role: "tab", "data-tab": p.dataset.tab, onclick: () => selectTool(p.dataset.tab) }, p.dataset.label));
+function setMode(m) {
+  mode = m; store.set("mode", m);
+  $("#modeCs").setAttribute("aria-pressed", String(m === "cs")); $("#modeTb").setAttribute("aria-pressed", String(m === "tb"));
+  $("#csView").hidden = m !== "cs"; $("#csTabs").hidden = m !== "cs";
+  $("#tbView").hidden = m !== "tb"; $("#tbTabs").hidden = m !== "tb";
+  if (m === "tb") selectTool(curTool);
+}
+$("#modeCs").addEventListener("click", () => setMode("cs"));
+$("#modeTb").addEventListener("click", () => setMode("tb"));
+
+/* ---------- tool: epoch ---------- */
+function parseTs(s) {
+  s = s.trim(); if (!s) return null;
+  if (/^-?\d+(\.\d+)?$/.test(s)) {
+    const n = parseFloat(s), a = Math.abs(n);
+    if (a >= 1e17) return { ms: n / 1e6, unit: "nanoseconds" };
+    if (a >= 1e14) return { ms: n / 1e3, unit: "microseconds" };
+    if (a >= 1e11) return { ms: n, unit: "milliseconds" };
+    return { ms: n * 1000, unit: "seconds" };
+  }
+  const t = Date.parse(s);
+  return isNaN(t) ? undefined : { ms: t, unit: "date string" };
+}
+function rel(ms) {
+  const d = (ms - Date.now()) / 1000, a = Math.abs(d), f = new Intl.RelativeTimeFormat("en", { numeric: "auto" });
+  for (const [n, s] of [["year", 31536000], ["month", 2592000], ["day", 86400], ["hour", 3600], ["minute", 60], ["second", 1]])
+    if (a >= s || n === "second") return f.format(Math.round(d / s), n);
+}
+function renderEpoch() {
+  const st = $("#epStatus"), r = parseTs($("#epIn").value);
+  if (r === null) { setStatus(st, ""); kvRows($("#epOut"), []); return; }
+  if (r === undefined || isNaN(new Date(r.ms).getTime())) { setStatus(st, "Cannot parse input", "err"); kvRows($("#epOut"), []); return; }
+  setStatus(st, `Detected: ${r.unit}`);
+  const d = new Date(r.ms);
+  kvRows($("#epOut"), [["UTC", d.toISOString()], ["Local", d.toString()], ["Relative", rel(r.ms)], ["Seconds", String(Math.floor(r.ms / 1000))], ["Millis", String(Math.floor(r.ms))]]);
+}
+$("#epIn").addEventListener("input", renderEpoch);
+$("#epNow").addEventListener("click", () => { $("#epIn").value = String(Math.floor(Date.now() / 1000)); renderEpoch(); });
+$("#epDate").addEventListener("input", () => {
+  const v = $("#epDate").value; if (!v) { kvRows($("#epOut2"), []); return; }
+  const ms = new Date(v).getTime();
+  kvRows($("#epOut2"), [["Seconds", String(Math.floor(ms / 1000))], ["Millis", String(ms)], ["UTC", new Date(ms).toISOString()]]);
+});
+
+/* ---------- tool: JSON ---------- */
+function sortKeys(v) {
+  if (Array.isArray(v)) return v.map(sortKeys);
+  if (v && typeof v === "object") return Object.fromEntries(Object.keys(v).sort().map(k => [k, sortKeys(v[k])]));
+  return v;
+}
+function jsonOp(fn, okMsg) {
+  const ta = $("#jsIn"), st = $("#jsStatus");
+  try { ta.value = fn(JSON.parse(ta.value)); setStatus(st, okMsg, "ok"); } catch (e) { setStatus(st, e.message, "err"); }
+}
+$("#jsFmt").addEventListener("click", () => jsonOp(v => JSON.stringify(v, null, 2), "Valid, formatted"));
+$("#jsMin").addEventListener("click", () => jsonOp(v => JSON.stringify(v), "Valid, minified"));
+$("#jsSort").addEventListener("click", () => jsonOp(v => JSON.stringify(sortKeys(v), null, 2), "Valid, keys sorted"));
+$("#jsCopy").addEventListener("click", () => copy($("#jsIn").value));
+$("#jsIn").addEventListener("input", () => {
+  const v = $("#jsIn").value.trim(), st = $("#jsStatus");
+  if (!v) return setStatus(st, "");
+  try { JSON.parse(v); setStatus(st, "Valid JSON", "ok"); } catch (e) { setStatus(st, e.message, "err"); }
+});
+
+/* ---------- tool: base64 ---------- */
+function b64enc(str, url) {
+  const bytes = new TextEncoder().encode(str);
+  let bin = ""; for (const b of bytes) bin += String.fromCharCode(b);
+  const out = btoa(bin);
+  return url ? out.replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "") : out;
+}
+function b64dec(str) {
+  let s = str.trim().replace(/\s+/g, "").replace(/-/g, "+").replace(/_/g, "/");
+  while (s.length % 4) s += "=";
+  const bin = atob(s);
+  return new TextDecoder("utf-8", { fatal: true }).decode(Uint8Array.from(bin, c => c.charCodeAt(0)));
+}
+$("#bEnc").addEventListener("click", () => { try { $("#bOut").value = b64enc($("#bIn").value, $("#bUrl").checked); setStatus($("#bStatus"), "Encoded", "ok"); } catch (e) { setStatus($("#bStatus"), e.message, "err"); } });
+$("#bDec").addEventListener("click", () => { try { $("#bOut").value = b64dec($("#bIn").value); setStatus($("#bStatus"), "Decoded", "ok"); } catch { $("#bOut").value = ""; setStatus($("#bStatus"), "Not valid base64 / UTF-8 text", "err"); } });
+$("#bCopy").addEventListener("click", () => copy($("#bOut").value));
+
+/* ---------- tool: URL ---------- */
+function renderUrlParts() {
+  const t = $("#uParts"); t.replaceChildren();
+  let u; try { u = new URL($("#uIn").value.trim()); } catch { return; }
+  const rows = [["protocol", u.protocol], ["host", u.hostname], ["port", u.port || "(default)"], ["path", u.pathname], ["hash", u.hash || ""]];
+  for (const [k, v] of u.searchParams) rows.push(["param " + k, v]);
+  for (const [k, v] of rows) t.append(h("tr", {}, h("th", {}, k), h("td", { class: "m" }, v)));
+}
+const urlOut = fn => { try { $("#uOut2").value = fn($("#uIn").value); } catch (e) { $("#uOut2").value = "Error: " + e.message; } };
+$("#uEnc").addEventListener("click", () => urlOut(encodeURIComponent));
+$("#uEncU").addEventListener("click", () => urlOut(encodeURI));
+$("#uDec").addEventListener("click", () => urlOut(decodeURIComponent));
+$("#uCopy2").addEventListener("click", () => copy($("#uOut2").value));
+$("#uIn").addEventListener("input", renderUrlParts);
+
+/* ---------- tool: hash ---------- */
+async function hashAll(buf) {
+  const st = $("#hStatus");
+  if (!window.crypto || !crypto.subtle) { setStatus(st, "crypto.subtle is unavailable here (needs HTTPS or localhost).", "err"); return; }
+  setStatus(st, "");
+  const rows = [];
+  for (const a of ["SHA-1", "SHA-256", "SHA-384", "SHA-512"]) rows.push([a, hex(await crypto.subtle.digest(a, buf))]);
+  kvRows($("#hOut"), rows); lastHashes = rows.map(r => r[1]); compareHash();
+}
+let lastHashes = [];
+function compareHash() {
+  const v = $("#hCmp").value.trim().toLowerCase().replace(/\s+/g, ""), s = $("#hCmpS");
+  if (!v || !lastHashes.length) return setStatus(s, "");
+  const m = lastHashes.findIndex(x => x === v);
+  m >= 0 ? setStatus(s, "Match: " + ["SHA-1", "SHA-256", "SHA-384", "SHA-512"][m], "ok") : setStatus(s, "No match", "err");
+}
+$("#hIn").addEventListener("input", () => { $("#hFile").value = ""; const t = $("#hIn").value; if (!t) { kvRows($("#hOut"), []); lastHashes = []; compareHash(); return; } hashAll(new TextEncoder().encode(t)); });
+$("#hFile").addEventListener("change", async e => { const f = e.target.files[0]; if (!f) return; $("#hIn").value = ""; hashAll(await f.arrayBuffer()); });
+$("#hCmp").addEventListener("input", compareHash);
+
+/* ---------- tool: JWT ---------- */
+function b64uDecode(s) {
+  s = s.replace(/-/g, "+").replace(/_/g, "/"); while (s.length % 4) s += "=";
+  return new TextDecoder().decode(Uint8Array.from(atob(s), c => c.charCodeAt(0)));
+}
+function renderJwt() {
+  const st = $("#jwStatus"), v = $("#jwIn").value.trim();
+  $("#jwH").value = ""; $("#jwP").value = ""; kvRows($("#jwClaims"), []);
+  if (!v) return setStatus(st, "");
+  try {
+    const p = v.replace(/^Bearer\s+/i, "").split(".");
+    if (p.length < 2) throw new Error("Not a JWT (expected 3 dot-separated parts)");
+    const hd = JSON.parse(b64uDecode(p[0])), pl = JSON.parse(b64uDecode(p[1]));
+    $("#jwH").value = JSON.stringify(hd, null, 2); $("#jwP").value = JSON.stringify(pl, null, 2);
+    const rows = [];
+    for (const c of ["iat", "nbf", "exp"]) if (typeof pl[c] === "number") rows.push([c, new Date(pl[c] * 1000).toISOString() + "  (" + rel(pl[c] * 1000) + ")"]);
+    for (const c of ["iss", "sub", "aud"]) if (pl[c] != null) rows.push([c, typeof pl[c] === "string" ? pl[c] : JSON.stringify(pl[c])]);
+    kvRows($("#jwClaims"), rows);
+    if (typeof pl.exp === "number") pl.exp * 1000 < Date.now() ? setStatus(st, "Expired", "err") : setStatus(st, "Not expired (signature not verified)", "ok");
+    else setStatus(st, "Decoded (no exp claim, signature not verified)", "ok");
+  } catch (e) { setStatus(st, e.message, "err"); }
+}
+$("#jwIn").addEventListener("input", renderJwt);
+
+/* ---------- tool: UUID ---------- */
+function uuid4() {
+  const b = crypto.getRandomValues(new Uint8Array(16));
+  b[6] = (b[6] & 0x0f) | 0x40; b[8] = (b[8] & 0x3f) | 0x80;
+  const x = hex(b);
+  return `${x.slice(0, 8)}-${x.slice(8, 12)}-${x.slice(12, 16)}-${x.slice(16, 20)}-${x.slice(20)}`;
+}
+function genUuids() {
+  const n = Math.min(100, Math.max(1, parseInt($("#uuCount").value, 10) || 1));
+  let out = Array.from({ length: n }, uuid4).join("\n");
+  if ($("#uuUpper").checked) out = out.toUpperCase();
+  $("#uuOut").value = out;
+}
+$("#uuGen").addEventListener("click", genUuids);
+$("#uuCopy").addEventListener("click", () => copy($("#uuOut").value, "Copied all"));
+genUuids();
+
+/* ---------- tool: secrets ---------- */
+const CHARSETS = {
+  hex: "0123456789abcdef",
+  alnum: "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789",
+  sym: "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#%^*-_=+.,:~",
+  b64u: "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_"
+};
+function randStr(len, chars) {
+  const out = [], max = Math.floor(256 / chars.length) * chars.length;
+  while (out.length < len) for (const x of crypto.getRandomValues(new Uint8Array(len * 2))) if (x < max && out.length < len) out.push(chars[x % chars.length]);
+  return out.join("");
+}
+function genSecrets() {
+  const chars = CHARSETS[$("#sCharset").value];
+  const len = Math.min(256, Math.max(4, parseInt($("#sLen").value, 10) || 32));
+  const n = Math.min(20, Math.max(1, parseInt($("#sCount").value, 10) || 1));
+  $("#sOut").value = Array.from({ length: n }, () => randStr(len, chars)).join("\n");
+  setStatus($("#sInfo"), `${len} characters from ${chars.length} symbols = about ${Math.floor(len * Math.log2(chars.length))} bits of entropy each`);
+}
+$("#sGen").addEventListener("click", genSecrets);
+$("#sCopy").addEventListener("click", () => copy($("#sOut").value, "Copied all"));
+genSecrets();
+
+/* ---------- tool: cron ---------- */
+const CRON_FIELDS = [
+  { n: "minute", min: 0, max: 59 }, { n: "hour", min: 0, max: 23 }, { n: "day of month", min: 1, max: 31 },
+  { n: "month", min: 1, max: 12, names: "jan feb mar apr may jun jul aug sep oct nov dec", off: 1 },
+  { n: "day of week", min: 0, max: 7, names: "sun mon tue wed thu fri sat", off: 0 }
+];
+const CRON_ALIAS = { "@yearly": "0 0 1 1 *", "@annually": "0 0 1 1 *", "@monthly": "0 0 1 * *", "@weekly": "0 0 * * 0", "@daily": "0 0 * * *", "@midnight": "0 0 * * *", "@hourly": "0 * * * *" };
+function parseCronField(src, f) {
+  const set = new Set();
+  const val = s => {
+    if (f.names) { const i = f.names.split(" ").indexOf(s.toLowerCase()); if (i >= 0) return i + f.off; }
+    if (!/^\d+$/.test(s)) throw new Error(`${f.n}: bad value "${s}"`);
+    return +s;
+  };
+  for (const part of src.split(",")) {
+    const seg = part.split("/");
+    if (seg.length > 2) throw new Error(`${f.n}: bad step in "${part}"`);
+    const [range, step] = seg;
+    let stepN = 1;
+    if (step !== undefined) { if (!/^\d+$/.test(step) || +step < 1) throw new Error(`${f.n}: bad step "${step}"`); stepN = +step; }
+    let lo, hi;
+    if (range === "*") { lo = f.min; hi = f.n === "day of week" ? 6 : f.max; }
+    else if (range.includes("-")) { const [a, b] = range.split("-"); lo = val(a); hi = val(b); }
+    else { lo = val(range); hi = step !== undefined ? f.max : lo; }
+    if (lo < f.min || hi > f.max || lo > hi) throw new Error(`${f.n}: "${part}" outside ${f.min}-${f.max}`);
+    for (let i = lo; i <= hi; i += stepN) set.add(f.n === "day of week" && i === 7 ? 0 : i);
+  }
+  return set;
+}
+function parseCron(expr) {
+  expr = expr.trim().replace(/\s+/g, " ");
+  expr = CRON_ALIAS[expr.toLowerCase()] || expr;
+  const parts = expr.split(" ");
+  if (parts.length !== 5) throw new Error(`Expected 5 fields, got ${parts.length}`);
+  return { parts, sets: parts.map((p, i) => parseCronField(p, CRON_FIELDS[i])) };
+}
+function cronNext(c, count) {
+  const [mins, hrs, doms, mons, dows] = c.sets;
+  const starDom = c.parts[2][0] === "*", starDow = c.parts[4][0] === "*";
+  const minL = [...mins].sort((a, b) => a - b), hrL = [...hrs].sort((a, b) => a - b);
+  const start = new Date(); start.setSeconds(0, 0); start.setMinutes(start.getMinutes() + 1);
+  const out = [];
+  for (let d = 0; d < 366 * 6 && out.length < count; d++) {
+    const day = new Date(start.getFullYear(), start.getMonth(), start.getDate() + d);
+    if (!mons.has(day.getMonth() + 1)) continue;
+    const domOk = doms.has(day.getDate()), dowOk = dows.has(day.getDay());
+    if (!((!starDom && !starDow) ? (domOk || dowOk) : (domOk && dowOk))) continue;
+    for (const hh of hrL) for (const mm of minL) {
+      const t = new Date(day.getFullYear(), day.getMonth(), day.getDate(), hh, mm);
+      if (t >= start && out.length < count) out.push(t);
+    }
+  }
+  return out;
+}
+function setSummary(set, f) {
+  const total = f.n === "day of week" ? 7 : f.max - f.min + 1;
+  if (set.size === total) return "every";
+  const v = [...set].sort((a, b) => a - b);
+  return v.length > 16 ? v.slice(0, 16).join(",") + ",... (" + v.length + " values)" : v.join(",");
+}
+function renderCron() {
+  const st = $("#crStatus"), ft = $("#crFields"), nt = $("#crNext");
+  ft.replaceChildren(); nt.replaceChildren();
+  let c;
+  try { c = parseCron($("#crIn").value); } catch (e) { setStatus(st, e.message, "err"); return; }
+  setStatus(st, "Valid", "ok");
+  c.sets.forEach((s, i) => ft.append(h("tr", {}, h("th", {}, CRON_FIELDS[i].n), h("td", { class: "m" }, c.parts[i]), h("td", { class: "m" }, setSummary(s, CRON_FIELDS[i])))));
+  const runs = cronNext(c, 5);
+  if (!runs.length) { nt.append(h("tr", {}, h("td", {}, "No run within the next 6 years"))); return; }
+  const fmt = new Intl.DateTimeFormat("en-GB", { weekday: "short", day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit", hour12: false });
+  for (const t of runs) nt.append(h("tr", {}, h("td", { class: "m" }, fmt.format(t)), h("td", { class: "m muted" }, "[" + t.toISOString().slice(0, 16).replace("T", " ") + " UTC]")));
+}
+$("#crIn").addEventListener("input", renderCron);
+
+/* ---------- tool: time zones ---------- */
+const ZONES = ["UTC", "Europe/Paris", "Europe/London", "America/New_York", "America/Chicago", "America/Los_Angeles", "Asia/Dubai", "Asia/Kolkata", "Asia/Tokyo", "Australia/Sydney"];
+const localZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+const tzSrc = $("#tzSrc");
+tzSrc.append(h("option", { value: "local" }, `Local (${localZone})`), ...ZONES.map(z => h("option", { value: z }, z)));
+function tzOffsetMs(ms, tz) {
+  const p = Object.fromEntries(new Intl.DateTimeFormat("en-US", { timeZone: tz, hourCycle: "h23", year: "numeric", month: "numeric", day: "numeric", hour: "numeric", minute: "numeric", second: "numeric" })
+    .formatToParts(new Date(ms)).map(x => [x.type, x.value]));
+  return Date.UTC(+p.year, +p.month - 1, +p.day, +p.hour, +p.minute, +p.second) - Math.floor(ms / 1000) * 1000;
+}
+function wallToUtc(v, tz) {
+  const [d, t] = v.split("T"), [y, mo, da] = d.split("-").map(Number), [hh, mi, ss = 0] = t.split(":").map(Number);
+  const guess = Date.UTC(y, mo - 1, da, hh, mi, ss);
+  let res = guess - tzOffsetMs(guess, tz);
+  const o2 = tzOffsetMs(res, tz);
+  if (o2 !== guess - res) res = guess - o2;
+  return res;
+}
+function renderTz() {
+  const v = $("#tzIn").value, tb = $("#tzOut"); tb.replaceChildren();
+  if (!v) return;
+  const src = tzSrc.value, ms = src === "local" ? new Date(v).getTime() : wallToUtc(v, src);
+  if (isNaN(ms)) return;
+  for (const z of [localZone, ...ZONES.filter(z => z !== localZone)]) {
+    const s = new Intl.DateTimeFormat("en-GB", { timeZone: z, weekday: "short", day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit", hour12: false, timeZoneName: "short" }).format(new Date(ms));
+    tb.append(h("tr", {}, h("th", {}, z === localZone ? z + " (local)" : z), h("td", { class: "m" }, s)));
+  }
+}
+(() => { const n = new Date(); n.setSeconds(0, 0); n.setMinutes(n.getMinutes() - n.getTimezoneOffset()); $("#tzIn").value = n.toISOString().slice(0, 16); })();
+$("#tzIn").addEventListener("input", renderTz); tzSrc.addEventListener("change", renderTz);
+
+/* ---------- tool: chmod ---------- */
+const chBoxes = {};
+const WHO = [["Owner", "u"], ["Group", "g"], ["Other", "o"]];
+(() => {
+  const g = $("#chGrid");
+  g.append(h("span"), ...["Read (4)", "Write (2)", "Execute (1)"].map(t => h("span", { class: "muted small" }, t)));
+  for (const [who, k] of WHO) {
+    g.append(h("span", {}, who));
+    for (const bit of ["r", "w", "x"]) {
+      const cb = h("input", { type: "checkbox", "aria-label": who + " " + bit });
+      chBoxes[k + bit] = cb; cb.addEventListener("change", chFromBoxes); g.append(cb);
+    }
+  }
+  g.append(h("span", {}, "Special"));
+  for (const [k, l] of [["su", "setuid"], ["sg", "setgid"], ["st", "sticky"]]) {
+    const cb = h("input", { type: "checkbox", "aria-label": l }); chBoxes[k] = cb; cb.addEventListener("change", chFromBoxes);
+    g.append(h("label", { class: "chk" }, cb, l));
+  }
+})();
+function chFromBoxes() {
+  const sp = (chBoxes.su.checked ? 4 : 0) + (chBoxes.sg.checked ? 2 : 0) + (chBoxes.st.checked ? 1 : 0);
+  const dig = WHO.map(([, k]) => (chBoxes[k + "r"].checked ? 4 : 0) + (chBoxes[k + "w"].checked ? 2 : 0) + (chBoxes[k + "x"].checked ? 1 : 0)).join("");
+  $("#chOct").value = (sp ? String(sp) : "") + dig;
+  chRender();
+}
+function chFromOctal() {
+  const v = $("#chOct").value.trim();
+  if (!/^[0-7]{3,4}$/.test(v)) return chRender(true);
+  const p = v.padStart(4, "0").split("").map(Number);
+  chBoxes.su.checked = !!(p[0] & 4); chBoxes.sg.checked = !!(p[0] & 2); chBoxes.st.checked = !!(p[0] & 1);
+  WHO.forEach(([, k], i) => { const d = p[i + 1]; chBoxes[k + "r"].checked = !!(d & 4); chBoxes[k + "w"].checked = !!(d & 2); chBoxes[k + "x"].checked = !!(d & 1); });
+  chRender();
+}
+function chRender(bad) {
+  const out = $("#chOut"); out.replaceChildren();
+  if (bad) { kvRows(out, []); return; }
+  const oct = $("#chOct").value.trim();
+  const p = oct.padStart(4, "0").split("").map(Number);
+  const sym = [1, 2, 3].map(i => { const d = p[i]; return (d & 4 ? "r" : "-") + (d & 2 ? "w" : "-") + (d & 1 ? "x" : "-"); });
+  if (p[0] & 4) sym[0] = sym[0].slice(0, 2) + (sym[0][2] === "x" ? "s" : "S");
+  if (p[0] & 2) sym[1] = sym[1].slice(0, 2) + (sym[1][2] === "x" ? "s" : "S");
+  if (p[0] & 1) sym[2] = sym[2].slice(0, 2) + (sym[2][2] === "x" ? "t" : "T");
+  const s = sym.join("");
+  const symCmd = WHO.map(([, k]) => k + "=" + ["r", "w", "x"].filter(b => chBoxes[k + b].checked).join("")).join(",");
+  kvRows(out, [["Octal", oct], ["Symbolic", "-" + s], ["Command", "chmod " + oct + " file"], ["Symbolic cmd", "chmod " + symCmd + " file"]]);
+}
+$("#chOct").addEventListener("input", chFromOctal);
+chFromOctal();
+
+/* ---------- tool: CIDR ---------- */
+const ip2n = s => {
+  const p = s.trim().split(".");
+  if (p.length !== 4 || p.some(x => !/^\d{1,3}$/.test(x) || +x > 255)) throw new Error("Invalid IPv4 address");
+  return (((+p[0]) << 24) | ((+p[1]) << 16) | ((+p[2]) << 8) | (+p[3])) >>> 0;
+};
+const n2ip = n => [n >>> 24, (n >>> 16) & 255, (n >>> 8) & 255, n & 255].join(".");
+function cidrInfo(s) {
+  const [a, pl] = s.trim().split("/");
+  const p = pl === undefined ? 32 : (/^\d+$/.test(pl) ? +pl : NaN);
+  if (!(p >= 0 && p <= 32)) throw new Error("Prefix must be 0-32");
+  const ip = ip2n(a), mask = p === 0 ? 0 : (0xFFFFFFFF << (32 - p)) >>> 0;
+  const net = (ip & mask) >>> 0, bc = (net | (~mask >>> 0)) >>> 0;
+  const total = 2 ** (32 - p);
+  let first, last, usable;
+  if (p === 32) { first = net; last = net; usable = 1; } else if (p === 31) { first = net; last = bc; usable = 2; } else { first = net + 1; last = bc - 1; usable = total - 2; }
+  return { ip, p, mask, net, bc, total, first, last, usable };
+}
+const cidrKind = ip => {
+  const r = [["10.0.0.0", 8, "private (RFC 1918)"], ["172.16.0.0", 12, "private (RFC 1918)"], ["192.168.0.0", 16, "private (RFC 1918)"], ["100.64.0.0", 10, "carrier-grade NAT (RFC 6598)"], ["127.0.0.0", 8, "loopback"], ["169.254.0.0", 16, "link-local"]];
+  for (const [b, p, l] of r) { const m = (0xFFFFFFFF << (32 - p)) >>> 0; if (((ip & m) >>> 0) === ip2n(b)) return l; }
+  return "public (routable)";
+};
+function renderCidr() {
+  const st = $("#cdStatus"), subs = $("#cdSubs"); subs.replaceChildren();
+  let c; try { c = cidrInfo($("#cdIn").value); } catch (e) { setStatus(st, e.message, "err"); kvRows($("#cdOut"), []); return; }
+  setStatus(st, "Valid", "ok");
+  kvRows($("#cdOut"), [["Network", n2ip(c.net) + "/" + c.p], ["Netmask", n2ip(c.mask)], ["Wildcard", n2ip(~c.mask >>> 0)], ["Broadcast", n2ip(c.bc)],
+    ["First host", n2ip(c.first)], ["Last host", n2ip(c.last)], ["Usable hosts", String(c.usable)], ["Total addresses", String(c.total)], ["Type", cidrKind(c.ip)]]);
+  const q = parseInt($("#cdSplit").value, 10);
+  if (q) {
+    if (q <= c.p || q > 32) subs.append(h("tr", {}, h("td", {}, "Split prefix must be larger than /" + c.p + " and at most /32")));
+    else if (q - c.p > 6) subs.append(h("tr", {}, h("td", {}, "That makes " + 2 ** (q - c.p) + " subnets: limit is 64 (split by at most 6 bits)")));
+    else {
+      subs.append(h("tr", {}, h("th", {}, "Subnet"), h("th", {}, "Usable range")));
+      const size = 2 ** (32 - q);
+      for (let i = 0; i < 2 ** (q - c.p); i++) { const n = c.net + i * size; const f = q >= 31 ? n : n + 1, l = q >= 31 ? n + size - 1 : n + size - 2; subs.append(h("tr", {}, h("td", { class: "m" }, n2ip(n) + "/" + q), h("td", { class: "m" }, n2ip(f) + " - " + n2ip(l)))); }
+    }
+  }
+  const ipv = $("#cdIp").value.trim(), s2 = $("#cdIpS");
+  if (!ipv) setStatus(s2, ""); else { try { const x = ip2n(ipv); x >= c.net && x <= c.bc ? setStatus(s2, "Inside", "ok") : setStatus(s2, "Outside", "err"); } catch (e) { setStatus(s2, e.message, "err"); } }
+}
+for (const id of ["#cdIn", "#cdSplit", "#cdIp"]) $(id).addEventListener("input", renderCidr);
+
+/* ---------- tool: SLA ---------- */
+function fmtDur(s) {
+  if (s < 1) return Math.round(s * 1000) + " ms";
+  if (s < 60) return s.toFixed(1) + " s";
+  if (s < 3600) return Math.floor(s / 60) + " min " + Math.round(s % 60) + " s";
+  return Math.floor(s / 3600) + " h " + Math.round((s % 3600) / 60) + " min";
+}
+const PERIODS = [["Per day", 86400], ["Per week", 604800], ["Per 30-day month", 2592000], ["Per year (365 d)", 31536000]];
+function renderSla() {
+  const a = parseFloat($("#slaIn").value), t = $("#slaOut"); t.replaceChildren();
+  if (isNaN(a) || a < 0 || a > 100) t.append(h("tr", {}, h("td", {}, "Enter a value between 0 and 100")));
+  else for (const [l, s] of PERIODS) t.append(h("tr", {}, h("th", {}, l), h("td", { class: "m" }, fmtDur((1 - a / 100) * s))));
+  const m = parseFloat($("#slaMin").value), per = +$("#slaPer").value;
+  $("#slaRev").textContent = isNaN(m) || m < 0 ? "" : Math.max(0, (1 - (m * 60) / per) * 100).toFixed(4) + " %";
+}
+(() => {
+  const r = $("#slaRef"); r.append(h("tr", {}, h("th", {}, "Target"), h("th", {}, "Per 30 days"), h("th", {}, "Per year")));
+  for (const a of [99, 99.5, 99.9, 99.95, 99.99, 99.999]) r.append(h("tr", {}, h("td", {}, a + "%"), h("td", { class: "m" }, fmtDur((1 - a / 100) * 2592000)), h("td", { class: "m" }, fmtDur((1 - a / 100) * 31536000))));
+})();
+for (const id of ["#slaIn", "#slaMin", "#slaPer"]) $(id).addEventListener("input", renderSla);
+
+/* ---------- tool: regex ---------- */
+function renderRegex() {
+  const st = $("#rxS"), hl = $("#rxH"), tb = $("#rxM"); hl.replaceChildren(); tb.replaceChildren();
+  const text = $("#rxT").value; let flags = $("#rxF").value.replace(/[^dgimsuvy]/g, "");
+  if (!flags.includes("g")) flags += "g";
+  let re; try { re = new RegExp($("#rxP").value, flags); } catch (e) { setStatus(st, e.message, "err"); hl.textContent = text; return; }
+  if (!$("#rxP").value) { setStatus(st, ""); hl.textContent = text; return; }
+  const ms = []; for (const m of text.matchAll(re)) { ms.push(m); if (ms.length >= 500) break; }
+  setStatus(st, `${ms.length}${ms.length >= 500 ? "+" : ""} match${ms.length === 1 ? "" : "es"}`, ms.length ? "ok" : "");
+  let pos = 0;
+  for (const m of ms) { if (m[0] === "") continue; hl.append(text.slice(pos, m.index), h("mark", {}, m[0])); pos = m.index + m[0].length; }
+  hl.append(text.slice(pos));
+  if (ms.length) {
+    tb.append(h("tr", {}, h("th", {}, "#"), h("th", {}, "Index"), h("th", {}, "Match"), h("th", {}, "Groups")));
+    ms.slice(0, 50).forEach((m, i) => {
+      const g = [...m].slice(1).map((x, j) => (j + 1) + "=" + x).concat(m.groups ? Object.entries(m.groups).map(([k, v]) => k + "=" + v) : []).join("  ");
+      tb.append(h("tr", {}, h("td", {}, String(i + 1)), h("td", {}, String(m.index)), h("td", { class: "m" }, m[0]), h("td", { class: "m" }, g)));
+    });
+  }
+}
+for (const id of ["#rxP", "#rxF", "#rxT"]) $(id).addEventListener("input", renderRegex);
+
+/* ---------- tool: lines ---------- */
+const lines = () => { const v = $("#lnIn").value; return v === "" ? [] : v.split(/\r?\n/); };
+function lnApply(fn) { $("#lnIn").value = fn(lines()).join("\n"); lnStats(); }
+function lnStats() {
+  const l = lines(), u = new Set(l).size;
+  setStatus($("#lnStat"), `${l.length} lines, ${u} unique, ${$("#lnIn").value.length} characters`);
+}
+$("#lnSort").addEventListener("click", () => lnApply(l => [...l].sort((a, b) => a.localeCompare(b))));
+$("#lnNum").addEventListener("click", () => lnApply(l => [...l].sort((a, b) => parseFloat(a) - parseFloat(b) || a.localeCompare(b))));
+$("#lnUniq").addEventListener("click", () => lnApply(l => [...new Set(l)]));
+$("#lnRev").addEventListener("click", () => lnApply(l => [...l].reverse()));
+$("#lnTrim").addEventListener("click", () => lnApply(l => l.map(x => x.trim()).filter(Boolean)));
+$("#lnCopy").addEventListener("click", () => copy($("#lnIn").value));
+$("#lnIn").addEventListener("input", lnStats);
+
+/* ---------- init ---------- */
+renderSheet(); renderEpoch(); renderCron(); renderTz(); renderCidr(); renderSla(); renderRegex(); lnStats();
+setMode(mode);
+</script>
+</body>
+</html>
