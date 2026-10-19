@@ -2,6 +2,8 @@
 
 A single-file, offline DevOps desk: searchable cheatsheets for the tools used every day, plus a toolbox of small converters and calculators. One `index.html`, no build step, no dependencies, no network calls.
 
+**[▶ Open it live](https://underscorelog.github.io/devops-toolbox/daily-dashboard/)** (GitHub Pages)
+
 ![Cheatsheets view](screenshots/cheatsheets.png)
 
 ![Toolbox view, IPv4 subnet calculator](screenshots/toolbox.png)
